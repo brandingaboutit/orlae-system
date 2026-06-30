@@ -23,22 +23,20 @@ const NAV = [
   {id:'compras',l:'Compras',ico:'🛒'},
   {id:'vendas',l:'Vendas',ico:'🛍️'},
   {id:'clientes',l:'Clientes',ico:'👤'},
-  {id:'estoque',l:'Estoque',ico:'📦'},
+  {id:'estoque',l:'Estoque de Produtos',ico:'📦'},
   {id:'custo',l:'Custo de Produto',ico:'🏷️'},
   {id:'precificacao',l:'Precificação',ico:'💲'},
   {id:'antecipacao',l:'Antecipação',ico:'⚡'},
   {id:'fornecedores',l:'Fornecedores',ico:'🏭'},
-  {id:'materiais',l:'Materiais',ico:'🧵'},
+  {id:'materiais',l:'Matéria-Prima',ico:'🧵'},
   {id:'relatorios',l:'Relatórios',ico:'📊'},
 ];
 
 // ── localStorage hook ─────────────────────────────────────────────────────────
 function useStore(key, init) {
   const [val, setVal] = useState(() => {
-    try {
-      const stored = localStorage.getItem(`orlae-${key}`);
-      return stored ? JSON.parse(stored) : init;
-    } catch(e) { return init; }
+    try { const s = localStorage.getItem(`orlae-${key}`); return s ? JSON.parse(s) : init; }
+    catch(e) { return init; }
   });
   const save = useCallback(fn => {
     setVal(prev => {
@@ -50,7 +48,17 @@ function useStore(key, init) {
   return [val, save];
 }
 
-// ── UI Primitives ─────────────────────────────────────────────────────────────
+// ── Logo ──────────────────────────────────────────────────────────────────────
+const OrlaeLogo = ({collapsed})=> collapsed
+  ? <div style={{width:38,height:38,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+      <img src={LOGO_URL} alt="Orlaê" style={{width:38,height:38,objectFit:'contain'}}/>
+    </div>
+  : <div style={{display:'flex',flexDirection:'column',gap:4}}>
+      <img src={LOGO_URL} alt="Orlaê" style={{width:130,objectFit:'contain',display:'block'}}/>
+      <div style={{color:'rgba(255,255,255,.38)',fontSize:9,whiteSpace:'nowrap',letterSpacing:2.5,textTransform:'uppercase',fontWeight:500}}>Brand Management</div>
+    </div>;
+
+// ── UI Primitives ──────────────────────────────────────────────────────────────
 const inp = {width:'100%',padding:'9px 12px',border:`1px solid ${C.BD}`,borderRadius:8,background:'#fff',fontSize:13,fontFamily:'inherit',boxSizing:'border-box',outline:'none'};
 const inpRO = {...inp,background:C.BG2,color:C.S,fontWeight:800};
 const lbl = {display:'block',fontSize:11,fontWeight:700,color:C.TM,marginBottom:4,letterSpacing:0.3};
@@ -81,9 +89,9 @@ const SC = ({title,value,sub,icon,color=C.P})=>(
     {sub&&<div style={{fontSize:11,color:'#bbb',marginTop:1}}>{sub}</div>}</div>
   </div>
 );
-const PH = ({title,action})=>(
-  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24}}>
-    <h2 style={{margin:0,color:C.P,fontSize:20,fontWeight:800}}>{title}</h2>{action}
+const PH = ({title,action,sub})=>(
+  <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:24}}>
+    <div><h2 style={{margin:0,color:C.P,fontSize:20,fontWeight:800}}>{title}</h2>{sub&&<p style={{margin:'2px 0 0',color:'#bbb',fontSize:12}}>{sub}</p>}</div>{action}
   </div>
 );
 const Tbl = ({cols,rows,empty='Nenhum registro.'})=>(
@@ -100,7 +108,7 @@ const Tbl = ({cols,rows,empty='Nenhum registro.'})=>(
 );
 const Modal = ({title,onClose,children,wide=false})=>(
   <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.45)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-    <div style={{background:'#fff',borderRadius:16,width:'100%',maxWidth:wide?720:560,maxHeight:'92vh',overflow:'auto',boxShadow:'0 24px 80px rgba(0,0,0,.2)'}}>
+    <div style={{background:'#fff',borderRadius:16,width:'100%',maxWidth:wide?760:560,maxHeight:'92vh',overflow:'auto',boxShadow:'0 24px 80px rgba(0,0,0,.2)'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'18px 24px',borderBottom:`1px solid ${C.BD}`,position:'sticky',top:0,background:'#fff',zIndex:1}}>
         <h3 style={{margin:0,color:C.P,fontSize:16,fontWeight:800}}>{title}</h3>
         <button onClick={onClose} style={{background:'none',border:'none',fontSize:20,cursor:'pointer',color:'#bbb',lineHeight:1}}>✕</button>
@@ -113,23 +121,13 @@ const Grid = ({cols='1fr 1fr',children,gap=12})=><div style={{display:'grid',gri
 const Divider = ({label})=><div style={{margin:'16px 0 12px',fontSize:11,fontWeight:800,color:C.TM,textTransform:'uppercase',letterSpacing:1,borderBottom:`1px solid ${C.BD}`,paddingBottom:6}}>{label}</div>;
 const stEst = q => q===0?{t:'default',l:'Sem Estoque'}:q<25?{t:'danger',l:'Ruim (<25)'}:q<=50?{t:'warning',l:'Mínimo (≤50)'}:{t:'success',l:'Bom (>50)'};
 
-// ── Logo ──────────────────────────────────────────────────────────────────────
-const OrlaeLogo = ({collapsed})=> collapsed
-  ? <div style={{width:38,height:38,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-      <img src={LOGO_URL} alt="Orlaê" style={{width:38,height:38,objectFit:'contain'}}/>
-    </div>
-  : <div style={{display:'flex',flexDirection:'column',gap:4}}>
-      <img src={LOGO_URL} alt="Orlaê" style={{width:130,objectFit:'contain',display:'block'}}/>
-      <div style={{color:'rgba(255,255,255,.38)',fontSize:9,whiteSpace:'nowrap',letterSpacing:2.5,textTransform:'uppercase',fontWeight:500}}>Brand Management</div>
-    </div>;
-
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
 function Dashboard({fin,contas,estoque,vendas}){
   const saldo=fin.reduce((s,f)=>f.tipo==='entrada'?s+f.valor:s-f.valor,0);
   const aPagar=contas.filter(c=>c.status!=='pago'&&c.tipo==='pagar').reduce((s,c)=>s+c.valor,0);
   const aReceber=contas.filter(c=>c.status!=='pago'&&c.tipo==='receber').reduce((s,c)=>s+c.valor,0);
   const mesAtual=todayStr().slice(0,7);
-  const vendasMes=vendas.filter(v=>v.data?.startsWith(mesAtual)).reduce((s,v)=>s+v.valor,0);
+  const vendasMes=vendas.filter(v=>v.data?.startsWith(mesAtual)).reduce((s,v)=>s+v.valorTotal,0);
   const criticos=estoque.filter(e=>e.quantidade>0&&e.quantidade<25).length;
   const semEst=estoque.filter(e=>e.quantidade===0).length;
   const ultMov=[...fin].sort((a,b)=>b.data?.localeCompare(a.data)).slice(0,6);
@@ -308,57 +306,108 @@ function Clientes({clientes,setClientes}){
 }
 
 // ── VENDAS ────────────────────────────────────────────────────────────────────
-function Vendas({vendas,setVendas,clientes,estoque,setEstoque,tipos}){
+function Vendas({vendas,setVendas,clientes,estoque,setEstoque,tipos,precificacoes}){
   const [modal,setModal]=useState(false);
-  const EF={clienteNome:'',data:todayStr(),tipoProduto:'',sku:'',quantidade:'1',valor:'',formaPagamento:'pix',tipoEntrega:'retirada',freteValor:'',formaEnvio:'pac',transportadora:''};
+  const EF={clienteNome:'',data:todayStr(),formaPagamento:'pix',tipoEntrega:'retirada',freteValor:'',formaEnvio:'pac',transportadora:'',desconto:''};
   const [f,setF]=useState(EF);
+  const [itens,setItens]=useState([]);
+  const [itemAtual,setItemAtual]=useState({tipoProduto:'',sku:'',quantidade:'1'});
   const pgtos=[{v:'pix',l:'Pix'},{v:'debito',l:'Cartão de Débito'},{v:'credito_1x',l:'Crédito à Vista'},{v:'credito_2x',l:'Crédito 2x'},{v:'credito_3x',l:'Crédito 3x'},{v:'credito_4x',l:'Crédito 4x'},{v:'credito_5x',l:'Crédito 5x'},{v:'credito_6x',l:'Crédito 6x'}];
+
+  const buscarPreco=(tipoProduto,sku)=>{
+    let p = sku ? precificacoes.find(x=>x.sku && x.sku===sku) : null;
+    if(!p) p = precificacoes.find(x=>x.tipoProduto===tipoProduto);
+    return p ? p.precoVenda : 0;
+  };
+
+  const addItem=()=>{
+    if(!itemAtual.tipoProduto||!itemAtual.quantidade)return;
+    const valorUnit = buscarPreco(itemAtual.tipoProduto, itemAtual.sku);
+    const qtd = parseInt(itemAtual.quantidade||1);
+    setItens(p=>[...p,{id:uid(),tipoProduto:itemAtual.tipoProduto,sku:itemAtual.sku,quantidade:qtd,valorUnitario:valorUnit,subtotal:valorUnit*qtd}]);
+    setItemAtual({tipoProduto:'',sku:'',quantidade:'1'});
+  };
+  const removeItem=id=>setItens(p=>p.filter(x=>x.id!==id));
+
+  const subtotalGeral=itens.reduce((s,i)=>s+i.subtotal,0);
+  const valorTotal=Math.max(0,subtotalGeral-n(f.desconto));
+
   const save=()=>{
-    if(!f.clienteNome||!f.valor)return;
-    const venda={...f,id:uid(),valor:parseFloat(f.valor),freteValor:parseFloat(f.freteValor||0),quantidade:parseInt(f.quantidade||1)};
+    if(!f.clienteNome||itens.length===0)return;
+    const venda={...f,id:uid(),itens,subtotal:subtotalGeral,desconto:n(f.desconto),valorTotal,freteValor:n(f.freteValor)};
     setVendas(p=>[venda,...p]);
-    if(f.sku)setEstoque(prev=>prev.map(e=>e.sku===f.sku?{...e,quantidade:Math.max(0,e.quantidade-(parseInt(f.quantidade||1)))}:e));
-    setModal(false);setF(EF);
+    setEstoque(prev=>{
+      let next=[...prev];
+      itens.forEach(it=>{ if(it.sku) next=next.map(e=>e.sku===it.sku?{...e,quantidade:Math.max(0,e.quantidade-it.quantidade)}:e); });
+      return next;
+    });
+    setModal(false);setF(EF);setItens([]);setItemAtual({tipoProduto:'',sku:'',quantidade:'1'});
   };
   return(
     <div>
       <PH title="Vendas" action={<Btn onClick={()=>setModal(true)}>+ Nova Venda</Btn>}/>
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:16}}>
-        <SC title="Total Vendido" value={fmt(vendas.reduce((s,v)=>s+v.valor,0))} icon="💰" color={C.P}/>
+        <SC title="Total Vendido" value={fmt(vendas.reduce((s,v)=>s+v.valorTotal,0))} icon="💰" color={C.P}/>
         <SC title="Nº de Vendas" value={vendas.length} icon="🛍️" color={C.S}/>
-        <SC title="Ticket Médio" value={fmt(vendas.length?vendas.reduce((s,v)=>s+v.valor,0)/vendas.length:0)} icon="📊" color="#0369a1"/>
+        <SC title="Ticket Médio" value={fmt(vendas.length?vendas.reduce((s,v)=>s+v.valorTotal,0)/vendas.length:0)} icon="📊" color="#0369a1"/>
       </div>
       <Card><Tbl cols={[
-        {l:'Data',k:'data'},{l:'Cliente',k:'clienteNome'},{l:'Produto',k:'tipoProduto'},
+        {l:'Data',k:'data'},{l:'Cliente',k:'clienteNome'},
+        {l:'Itens',k:'itens',render:r=><span style={{fontSize:12,color:'#888'}}>{r.itens?.map(i=>`${i.quantidade}x ${i.tipoProduto}`).join(', ')}</span>},
         {l:'Pagamento',k:'formaPagamento',render:r=>PGTO_LABELS[r.formaPagamento]||r.formaPagamento},
         {l:'Entrega',k:'tipoEntrega',render:r=><Bdg type={r.tipoEntrega==='retirada'?'default':'info'}>{r.tipoEntrega==='retirada'?'Retirada':'Envio'}</Bdg>},
-        {l:'Frete',k:'freteValor',render:r=>r.tipoEntrega==='envio'?fmt(r.freteValor):'-'},
-        {l:'Valor',k:'valor',render:r=><span style={{fontWeight:800,color:C.P}}>{fmt(r.valor)}</span>},
+        {l:'Desconto',k:'desconto',render:r=>r.desconto?fmt(r.desconto):'-'},
+        {l:'Total',k:'valorTotal',render:r=><span style={{fontWeight:800,color:C.P}}>{fmt(r.valorTotal)}</span>},
         {l:'',k:'_',render:r=><Btn sm outline color={C.P} onClick={()=>setVendas(p=>p.filter(x=>x.id!==r.id))}>✕</Btn>},
       ]} rows={[...vendas].sort((a,b)=>b.data?.localeCompare(a.data))}/></Card>
-      {modal&&<Modal title="Nova Venda" onClose={()=>setModal(false)}>
+      {modal&&<Modal title="Nova Venda" onClose={()=>setModal(false)} wide>
         <DI label="Cliente *" value={f.clienteNome} onChange={v=>setF(p=>({...p,clienteNome:v}))} options={clientes.map(c=>c.nome)} listId="vnd-cli" placeholder="Nome do cliente"/>
         <TI label="Data *" value={f.data} onChange={v=>setF(p=>({...p,data:v}))} type="date"/>
-        <DI label="Tipo de Produto" value={f.tipoProduto} onChange={v=>setF(p=>({...p,tipoProduto:v}))} options={tipos} listId="vnd-tipo" placeholder="Selecionar ou digitar"/>
-        <DI label="SKU" value={f.sku} onChange={v=>setF(p=>({...p,sku:v}))} options={estoque.map(e=>e.sku)} listId="vnd-sku" placeholder="Código do produto"/>
-        <Grid>
-          <TI label="Quantidade" value={f.quantidade} onChange={v=>setF(p=>({...p,quantidade:v}))} type="number"/>
-          <TI label="Valor da Venda (R$) *" value={f.valor} onChange={v=>setF(p=>({...p,valor:v}))} type="number"/>
-        </Grid>
+
+        <Divider label="Produtos da Venda"/>
+        <div style={{background:C.BG2,borderRadius:10,padding:14,marginBottom:14}}>
+          <Grid cols="2fr 1.4fr 0.8fr auto">
+            <DI label="Tipo de Produto" value={itemAtual.tipoProduto} onChange={v=>setItemAtual(p=>({...p,tipoProduto:v}))} options={tipos} listId="vnd-tipo" placeholder="Selecionar ou digitar"/>
+            <DI label="SKU" value={itemAtual.sku} onChange={v=>setItemAtual(p=>({...p,sku:v}))} options={estoque.map(e=>e.sku)} listId="vnd-sku" placeholder="Código (opcional)"/>
+            <TI label="Qtde" value={itemAtual.quantidade} onChange={v=>setItemAtual(p=>({...p,quantidade:v}))} type="number"/>
+            <div style={{marginBottom:14,display:'flex',alignItems:'flex-end'}}><Btn sm onClick={addItem}>+ Adicionar</Btn></div>
+          </Grid>
+          {itemAtual.tipoProduto&&<div style={{fontSize:11,color:C.TM}}>💲 Preço unitário encontrado: <strong>{fmt(buscarPreco(itemAtual.tipoProduto,itemAtual.sku))}</strong> {buscarPreco(itemAtual.tipoProduto,itemAtual.sku)===0&&'(nenhuma precificação salva para este produto — cadastre em Precificação)'}</div>}
+        </div>
+
+        {itens.length>0&&<div style={{marginBottom:14}}>
+          <Tbl cols={[
+            {l:'Produto',k:'tipoProduto'},{l:'SKU',k:'sku',render:r=>r.sku||'-'},{l:'Qtde',k:'quantidade'},
+            {l:'V. Unit.',k:'valorUnitario',render:r=>fmt(r.valorUnitario)},
+            {l:'Subtotal',k:'subtotal',render:r=><span style={{fontWeight:700}}>{fmt(r.subtotal)}</span>},
+            {l:'',k:'_',render:r=><Btn sm outline color={C.P} onClick={()=>removeItem(r.id)}>✕</Btn>},
+          ]} rows={itens}/>
+        </div>}
+
+        <Divider label="Pagamento e Entrega"/>
         <SI label="Forma de Pagamento" value={f.formaPagamento} onChange={v=>setF(p=>({...p,formaPagamento:v}))} options={pgtos}/>
+        <TI label="Desconto (R$)" value={f.desconto} onChange={v=>setF(p=>({...p,desconto:v}))} type="number" placeholder="0.00"/>
         <SI label="Tipo de Entrega" value={f.tipoEntrega} onChange={v=>setF(p=>({...p,tipoEntrega:v,freteValor:'',formaEnvio:'pac'}))} options={[{v:'retirada',l:'Retirada (sem custo)'},{v:'envio',l:'Envio'}]}/>
         {f.tipoEntrega==='envio'&&<>
           <TI label="Valor do Frete (R$)" value={f.freteValor} onChange={v=>setF(p=>({...p,freteValor:v}))} type="number"/>
           <SI label="Forma de Envio" value={f.formaEnvio} onChange={v=>setF(p=>({...p,formaEnvio:v,transportadora:''}))} options={[{v:'pac',l:'Correios PAC'},{v:'sedex',l:'Correios Sedex'},{v:'transportadora',l:'Transportadora'}]}/>
           {f.formaEnvio==='transportadora'&&<TI label="Nome da Transportadora" value={f.transportadora} onChange={v=>setF(p=>({...p,transportadora:v}))} placeholder="Nome da transportadora"/>}
         </>}
-        <Btn onClick={save}>Registrar Venda</Btn>
+
+        <div style={{background:C.P,borderRadius:10,padding:16,marginTop:8}}>
+          {[['Subtotal',fmt(subtotalGeral)],['Desconto',`- ${fmt(n(f.desconto))}`],['Total da Venda',fmt(valorTotal)]].map(([l,v])=>(
+            <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',color:'#fff'}}>
+              <span style={{opacity:.8,fontSize:13}}>{l}</span><span style={{fontWeight:900,fontSize:l==='Total da Venda'?20:14}}>{v}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{marginTop:16}}><Btn onClick={save}>Registrar Venda</Btn></div>
       </Modal>}
     </div>
   );
 }
 
-// ── ESTOQUE ───────────────────────────────────────────────────────────────────
+// ── ESTOQUE DE PRODUTOS ACABADOS ──────────────────────────────────────────────
 function Estoque({estoque,setEstoque,tipos}){
   const [modal,setModal]=useState(false);
   const EF={sku:'',nome:'',tipoProduto:'',cor:'',tamanho:'',quantidade:'0',custoTotal:'',frete:''};
@@ -376,7 +425,7 @@ function Estoque({estoque,setEstoque,tipos}){
   };
   return(
     <div>
-      <PH title="Controle de Estoque" action={<Btn onClick={()=>setModal(true)}>+ Novo Item</Btn>}/>
+      <PH title="Estoque de Produtos Acabados" sub="Produtos prontos, disponíveis para venda" action={<Btn onClick={()=>setModal(true)}>+ Novo Item</Btn>}/>
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:16}}>
         <SC title="Total SKUs" value={estoque.length} icon="📦" color={C.P}/>
         <SC title="Bom (>50)" value={estoque.filter(e=>e.quantidade>50).length} icon="✅" color="#166534"/>
@@ -420,23 +469,24 @@ function Estoque({estoque,setEstoque,tipos}){
 // ── CUSTO DE PRODUTO ──────────────────────────────────────────────────────────
 function CustoProduto({custos,setCustos,fornecedores,tipos,setTipos}){
   const [modal,setModal]=useState(false);
-  const E={tipoProduto:'',referencia:'',fornecedor:'',custoTotal:'',quantidade:'',cor:'',tamanho:'',tipoTecido:'',arteEstampa:'',etiqueta:'',embalagem:'',tag:'',lacre:'',cartao:'',papelEmbrulho:'',obs:''};
+  const E={tipoProduto:'',sku:'',colecao:'',fornecedor:'',custoTotal:'',frete:'',quantidade:'',cor:'',tamanho:'',tipoTecido:'',arteEstampa:'',etiqueta:'',embalagem:'',tag:'',lacre:'',cartao:'',papelEmbrulho:'',adesivo:'',caixa:'',sacola:'',outros:'',obs:''};
   const [f,setF]=useState(E);
-  const custoUnit=n(f.quantidade)>0?n(f.custoTotal)/n(f.quantidade):0;
-  const adicionais=n(f.arteEstampa)+n(f.etiqueta)+n(f.embalagem)+n(f.tag)+n(f.lacre)+n(f.cartao)+n(f.papelEmbrulho);
-  const cuTot=n(f.custoTotal)+adicionais;
+  const custoUnit=n(f.quantidade)>0?(n(f.custoTotal)+n(f.frete))/n(f.quantidade):0;
+  const adicionais=n(f.arteEstampa)+n(f.etiqueta)+n(f.embalagem)+n(f.tag)+n(f.lacre)+n(f.cartao)+n(f.papelEmbrulho)+n(f.adesivo)+n(f.caixa)+n(f.sacola)+n(f.outros);
+  const cuTot=n(f.custoTotal)+n(f.frete)+adicionais;
   const save=()=>{
     if(!f.tipoProduto)return;
     if(!tipos.includes(f.tipoProduto))setTipos(p=>[...p,f.tipoProduto]);
-    setCustos(p=>[{...f,id:uid(),custoTotal:n(f.custoTotal),quantidade:n(f.quantidade),custoUnitario:custoUnit,custoFinal:cuTot},...p]);
+    setCustos(p=>[{...f,id:uid(),custoTotal:n(f.custoTotal),frete:n(f.frete),quantidade:n(f.quantidade),custoUnitario:custoUnit,custoFinal:cuTot},...p]);
     setModal(false);setF(E);
   };
   return(
     <div>
       <PH title="Custo de Produto" action={<Btn onClick={()=>setModal(true)}>+ Nova Ficha</Btn>}/>
       <Card><Tbl cols={[
-        {l:'Tipo',k:'tipoProduto'},{l:'Referência',k:'referencia'},{l:'Fornecedor',k:'fornecedor'},{l:'Cor',k:'cor'},{l:'Tamanho',k:'tamanho'},
+        {l:'Tipo',k:'tipoProduto'},{l:'SKU',k:'sku'},{l:'Coleção/Drop',k:'colecao'},{l:'Fornecedor',k:'fornecedor'},
         {l:'Custo Total Lote',k:'custoTotal',render:r=>fmt(r.custoTotal)},
+        {l:'Frete',k:'frete',render:r=>fmt(r.frete)},
         {l:'Qtde',k:'quantidade'},
         {l:'Custo Unit.',k:'custoUnitario',render:r=><span style={{fontWeight:800,color:C.S}}>{fmt(r.custoUnitario)}</span>},
         {l:'Total c/ Adicionais',k:'custoFinal',render:r=><span style={{fontWeight:800,color:C.P}}>{fmt(r.custoFinal)}</span>},
@@ -445,32 +495,40 @@ function CustoProduto({custos,setCustos,fornecedores,tipos,setTipos}){
       ]} rows={custos}/></Card>
       {modal&&<Modal title="Nova Ficha de Custo" onClose={()=>setModal(false)} wide>
         <Divider label="Identificação"/>
-        <Grid>
+        <Grid cols="1fr 1fr 1fr">
           <DI label="Tipo de Produto *" value={f.tipoProduto} onChange={v=>setF(p=>({...p,tipoProduto:v}))} options={tipos} listId="cp-tipo" placeholder="Selecionar ou digitar"/>
-          <TI label="Referência" value={f.referencia} onChange={v=>setF(p=>({...p,referencia:v}))}/>
+          <TI label="SKU" value={f.sku} onChange={v=>setF(p=>({...p,sku:v}))} placeholder="EX: CAN-BRN-1"/>
+          <TI label="Coleção / Drop" value={f.colecao} onChange={v=>setF(p=>({...p,colecao:v}))} placeholder="ex: Vol.01"/>
         </Grid>
         <DI label="Fornecedor" value={f.fornecedor} onChange={v=>setF(p=>({...p,fornecedor:v}))} options={fornecedores.map(x=>x.nome)} listId="cp-forn" placeholder="Buscar fornecedor"/>
         <Grid><TI label="Cor" value={f.cor} onChange={v=>setF(p=>({...p,cor:v}))}/><TI label="Tamanho" value={f.tamanho} onChange={v=>setF(p=>({...p,tamanho:v}))}/></Grid>
         <TI label="Tipo de Tecido / Material" value={f.tipoTecido} onChange={v=>setF(p=>({...p,tipoTecido:v}))}/>
+
         <Divider label="Custo do Lote"/>
-        <Grid cols="1fr 1fr 1fr">
+        <Grid cols="1fr 1fr 1fr 1fr">
           <TI label="Custo Total do Lote (R$) *" value={f.custoTotal} onChange={v=>setF(p=>({...p,custoTotal:v}))} type="number" placeholder="0.00"/>
+          <TI label="Frete (R$)" value={f.frete} onChange={v=>setF(p=>({...p,frete:v}))} type="number" placeholder="0.00"/>
           <TI label="Quantidade *" value={f.quantidade} onChange={v=>setF(p=>({...p,quantidade:v}))} type="number" placeholder="0"/>
           <div style={{marginBottom:14}}>
             <label style={lbl}>Custo Unitário (auto)</label>
             <div style={{...inpRO,display:'flex',alignItems:'center',borderRadius:8,padding:'9px 12px',fontSize:13}}>{fmt(custoUnit)}</div>
           </div>
         </Grid>
-        <Divider label="Itens Adicionais (R$)"/>
+        <div style={{background:C.BG2,borderRadius:8,padding:'10px 14px',fontSize:12,color:C.TM,marginBottom:8}}>
+          📌 Custo unitário = (Custo Total + Frete) ÷ Quantidade
+        </div>
+
+        <Divider label="Itens Adicionais / Embalagem (R$)"/>
         <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
-          {[['arteEstampa','Arte Estampa'],['etiqueta','Etiqueta'],['embalagem','Embalagem'],['tag','Tag'],['lacre','Lacre'],['cartao','Cartão'],['papelEmbrulho','Papel Embrulho']].map(([k,l])=>(
+          {[['arteEstampa','Arte Estampa'],['etiqueta','Etiqueta'],['embalagem','Embalagem'],['tag','Tag'],['lacre','Lacre'],['cartao','Cartão'],['papelEmbrulho','Papel Embrulho'],['adesivo','Adesivo'],['caixa','Caixa'],['sacola','Sacola'],['outros','Outros']].map(([k,l])=>(
             <TI key={k} label={`${l} (R$)`} value={f[k]} onChange={v=>setF(p=>({...p,[k]:v}))} type="number" placeholder="0.00" style={{marginBottom:0}}/>
           ))}
         </div>
         <div style={{background:C.P,borderRadius:10,padding:14,margin:'16px 0',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-          <span style={{fontWeight:700,color:'rgba(255,255,255,.8)',fontSize:13}}>Custo Total (com adicionais):</span>
+          <span style={{fontWeight:700,color:'rgba(255,255,255,.8)',fontSize:13}}>Custo Total (lote + frete + adicionais):</span>
           <span style={{fontWeight:900,color:'#fff',fontSize:22}}>{fmt(cuTot)}</span>
         </div>
+
         <Divider label="Anotações em Destaque"/>
         <F label="Observações / Informações Relevantes">
           <textarea value={f.obs} onChange={e=>setF(p=>({...p,obs:e.target.value}))} placeholder="Inserir informações relevantes..." style={{...inp,height:72,resize:'vertical'}}/>
@@ -482,69 +540,103 @@ function CustoProduto({custos,setCustos,fornecedores,tipos,setTipos}){
 }
 
 // ── PRECIFICAÇÃO ──────────────────────────────────────────────────────────────
-function Precificacao({tipos}){
+function Precificacao({tipos,precificacoes,setPrecificacoes,custos}){
   const PARC_OPC=[0,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,7,8,9,10];
   const EE={caixa:'',papelEmbrulho:'',etiqueta:'',tag:'',lacre:'',adesivo:'',outros:''};
-  const [f,setF]=useState({tipoProduto:'',custoProduto:'',custoFrete:'',imposto:'',impostoFrete:'',taxaPlataforma:'',taxaGateway:'',taxaParcelamento:'',custoMarketing:'',markup:'100',emb:EE});
+  const EF={tipoProduto:'',sku:'',custoProduto:'',custoFrete:'',imposto:'',impostoFrete:'',taxaPlataforma:'',taxaGateway:'',taxaParcelamento:'',custoMarketing:'',markup:'100',emb:EE};
+  const [modal,setModal]=useState(false);
+  const [editId,setEditId]=useState(null);
+  const [f,setF]=useState(EF);
   const setE=(k,v)=>setF(p=>({...p,emb:{...p.emb,[k]:v}}));
   const custoEmb=Object.values(f.emb).reduce((s,v)=>s+n(v),0);
   const custoBase=n(f.custoProduto)+n(f.custoFrete)+n(f.imposto)+n(f.impostoFrete)+n(f.taxaPlataforma)+n(f.taxaGateway)+n(f.taxaParcelamento)+n(f.custoMarketing)+custoEmb;
   const precoVenda=custoBase*(1+n(f.markup)/100);
   const lucroBruto=precoVenda-custoBase;
   const margem=precoVenda>0?(lucroBruto/precoVenda)*100:0;
+
+  const puxarCusto=(tipoProduto)=>{
+    const c=custos.find(x=>x.tipoProduto===tipoProduto);
+    if(c)setF(p=>({...p,custoProduto:String(c.custoUnitario.toFixed(2))}));
+  };
+
+  const abrirNovo=()=>{setEditId(null);setF(EF);setModal(true);};
+  const abrirEdicao=(p)=>{setEditId(p.id);setF({tipoProduto:p.tipoProduto,sku:p.sku||'',custoProduto:String(p.custoProduto||''),custoFrete:String(p.custoFrete||''),imposto:String(p.imposto||''),impostoFrete:String(p.impostoFrete||''),taxaPlataforma:String(p.taxaPlataforma||''),taxaGateway:String(p.taxaGateway||''),taxaParcelamento:String(p.taxaParcelamento||''),custoMarketing:String(p.custoMarketing||''),markup:String(p.markup||'100'),emb:p.emb||EE});setModal(true);};
+
+  const save=()=>{
+    if(!f.tipoProduto)return;
+    const registro={id:editId||uid(),tipoProduto:f.tipoProduto,sku:f.sku,custoProduto:n(f.custoProduto),custoFrete:n(f.custoFrete),imposto:n(f.imposto),impostoFrete:n(f.impostoFrete),taxaPlataforma:n(f.taxaPlataforma),taxaGateway:n(f.taxaGateway),taxaParcelamento:n(f.taxaParcelamento),custoMarketing:n(f.custoMarketing),custoEmbalagem:custoEmb,emb:f.emb,markup:n(f.markup),custoBase,precoVenda,lucroBruto,margem,atualizadoEm:new Date().toISOString()};
+    setPrecificacoes(p=>editId?p.map(x=>x.id===editId?registro:x):[registro,...p]);
+    setModal(false);
+  };
+
   return(
     <div>
-      <PH title="Calculadora de Precificação"/>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
-        <div>
-          <Card style={{marginBottom:12}}>
-            <Divider label="Produto"/>
-            <DI label="Tipo de Produto" value={f.tipoProduto} onChange={v=>setF(p=>({...p,tipoProduto:v}))} options={tipos} listId="pr-tipo"/>
-            <TI label="Custo do Produto (R$)" value={f.custoProduto} onChange={v=>setF(p=>({...p,custoProduto:v}))} type="number"/>
-          </Card>
-          <Card style={{marginBottom:12}}>
-            <Divider label="Logística"/>
-            <TI label="Custo de Frete (R$)" value={f.custoFrete} onChange={v=>setF(p=>({...p,custoFrete:v}))} type="number"/>
-            <TI label="Imposto sobre Frete (R$)" value={f.impostoFrete} onChange={v=>setF(p=>({...p,impostoFrete:v}))} type="number"/>
-          </Card>
-          <Card>
-            <Divider label="Custo de Embalagem"/>
-            {[['caixa','Caixa de Envio'],['papelEmbrulho','Papel de Embrulho'],['etiqueta','Etiqueta'],['tag','Tag'],['lacre','Lacre'],['adesivo','Adesivo'],['outros','Outros']].map(([k,l])=>(
-              <TI key={k} label={`${l} (R$)`} value={f.emb[k]} onChange={v=>setE(k,v)} type="number" placeholder="0.00"/>
-            ))}
-            <div style={{background:C.BG2,borderRadius:8,padding:10,display:'flex',justifyContent:'space-between'}}>
-              <span style={{fontWeight:700,fontSize:13}}>Total Embalagem:</span>
-              <span style={{fontWeight:800,color:C.S}}>{fmt(custoEmb)}</span>
-            </div>
-          </Card>
-        </div>
-        <div>
-          <Card style={{marginBottom:12}}>
-            <Divider label="Taxas e Impostos"/>
-            <TI label="Imposto do Produto (R$)" value={f.imposto} onChange={v=>setF(p=>({...p,imposto:v}))} type="number"/>
-            <TI label="Taxa de Plataforma (R$)" value={f.taxaPlataforma} onChange={v=>setF(p=>({...p,taxaPlataforma:v}))} type="number"/>
-            <TI label="Taxa de Gateway (R$)" value={f.taxaGateway} onChange={v=>setF(p=>({...p,taxaGateway:v}))} type="number"/>
-            <F label="Taxa de Parcelamento (%)">
-              <input value={f.taxaParcelamento??''} onChange={e=>setF(p=>({...p,taxaParcelamento:e.target.value}))} type="number" step="0.1" list="pr-parc" style={inp} placeholder="0.00"/>
-              <datalist id="pr-parc">{PARC_OPC.map(t=><option key={t} value={t}/>)}</datalist>
-            </F>
-            <TI label="Custo de Marketing (R$)" value={f.custoMarketing} onChange={v=>setF(p=>({...p,custoMarketing:v}))} type="number"/>
-          </Card>
-          <Card style={{marginBottom:12}}>
-            <Divider label="Markup"/>
-            <TI label="Markup (%)" value={f.markup} onChange={v=>setF(p=>({...p,markup:v}))} type="number"/>
-          </Card>
-          <div style={{background:C.P,borderRadius:12,padding:20,color:'#fff'}}>
-            <div style={{fontWeight:800,fontSize:12,opacity:.7,textTransform:'uppercase',letterSpacing:1,marginBottom:14}}>Resultado</div>
-            {[['Custo Total',fmt(custoBase),14],['Preço de Venda',fmt(precoVenda),22],['Lucro Bruto',fmt(lucroBruto),14],['Margem de Lucro',`${margem.toFixed(1)}%`,14]].map(([l,v,sz])=>(
-              <div key={l} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'9px 0',borderBottom:'1px solid rgba(255,255,255,.15)'}}>
-                <span style={{opacity:.8,fontSize:13}}>{l}</span>
-                <span style={{fontWeight:900,fontSize:sz}}>{v}</span>
+      <PH title="Precificação" sub="Calcule e salve o preço de venda de cada produto — usado automaticamente no módulo Vendas" action={<Btn onClick={abrirNovo}>+ Nova Precificação</Btn>}/>
+      <Card><Tbl cols={[
+        {l:'Produto',k:'tipoProduto'},{l:'SKU',k:'sku',render:r=>r.sku||'-'},
+        {l:'Custo Total',k:'custoBase',render:r=>fmt(r.custoBase)},
+        {l:'Markup',k:'markup',render:r=>`${r.markup}%`},
+        {l:'Preço de Venda',k:'precoVenda',render:r=><span style={{fontWeight:900,color:C.P}}>{fmt(r.precoVenda)}</span>},
+        {l:'Margem',k:'margem',render:r=>`${r.margem.toFixed(1)}%`},
+        {l:'Ações',k:'_',render:r=><div style={{display:'flex',gap:4}}>
+          <Btn sm onClick={()=>abrirEdicao(r)}>Editar</Btn>
+          <Btn sm outline color={C.P} onClick={()=>setPrecificacoes(p=>p.filter(x=>x.id!==r.id))}>✕</Btn>
+        </div>},
+      ]} rows={precificacoes} empty="Nenhuma precificação salva ainda. Clique em '+ Nova Precificação' para começar."/></Card>
+
+      {modal&&<Modal title={editId?'Editar Precificação':'Nova Precificação'} onClose={()=>setModal(false)} wide>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+          <div>
+            <Card style={{marginBottom:12}}>
+              <Divider label="Produto"/>
+              <DI label="Tipo de Produto *" value={f.tipoProduto} onChange={v=>{setF(p=>({...p,tipoProduto:v}));puxarCusto(v);}} options={tipos} listId="pr-tipo"/>
+              <TI label="SKU (opcional)" value={f.sku} onChange={v=>setF(p=>({...p,sku:v}))} placeholder="Vincula a um item específico do estoque"/>
+              <TI label="Custo do Produto (R$)" value={f.custoProduto} onChange={v=>setF(p=>({...p,custoProduto:v}))} type="number"/>
+              <div style={{fontSize:11,color:'#bbb'}}>💡 Preenchido automaticamente a partir da última ficha de Custo de Produto deste tipo, se existir.</div>
+            </Card>
+            <Card style={{marginBottom:12}}>
+              <Divider label="Logística"/>
+              <TI label="Custo de Frete (R$)" value={f.custoFrete} onChange={v=>setF(p=>({...p,custoFrete:v}))} type="number"/>
+              <TI label="Imposto sobre Frete (R$)" value={f.impostoFrete} onChange={v=>setF(p=>({...p,impostoFrete:v}))} type="number"/>
+            </Card>
+            <Card>
+              <Divider label="Custo de Embalagem"/>
+              {[['caixa','Caixa de Envio'],['papelEmbrulho','Papel de Embrulho'],['etiqueta','Etiqueta'],['tag','Tag'],['lacre','Lacre'],['adesivo','Adesivo'],['outros','Outros']].map(([k,l])=>(
+                <TI key={k} label={`${l} (R$)`} value={f.emb[k]} onChange={v=>setE(k,v)} type="number" placeholder="0.00"/>
+              ))}
+              <div style={{background:C.BG2,borderRadius:8,padding:10,display:'flex',justifyContent:'space-between'}}>
+                <span style={{fontWeight:700,fontSize:13}}>Total Embalagem:</span><span style={{fontWeight:800,color:C.S}}>{fmt(custoEmb)}</span>
               </div>
-            ))}
+            </Card>
+          </div>
+          <div>
+            <Card style={{marginBottom:12}}>
+              <Divider label="Taxas e Impostos"/>
+              <TI label="Imposto do Produto (R$)" value={f.imposto} onChange={v=>setF(p=>({...p,imposto:v}))} type="number"/>
+              <TI label="Taxa de Plataforma (R$)" value={f.taxaPlataforma} onChange={v=>setF(p=>({...p,taxaPlataforma:v}))} type="number"/>
+              <TI label="Taxa de Gateway (R$)" value={f.taxaGateway} onChange={v=>setF(p=>({...p,taxaGateway:v}))} type="number"/>
+              <F label="Taxa de Parcelamento (%)">
+                <input value={f.taxaParcelamento??''} onChange={e=>setF(p=>({...p,taxaParcelamento:e.target.value}))} type="number" step="0.1" list="pr-parc" style={inp} placeholder="0.00"/>
+                <datalist id="pr-parc">{PARC_OPC.map(t=><option key={t} value={t}/>)}</datalist>
+              </F>
+              <TI label="Custo de Marketing (R$)" value={f.custoMarketing} onChange={v=>setF(p=>({...p,custoMarketing:v}))} type="number"/>
+            </Card>
+            <Card style={{marginBottom:12}}>
+              <Divider label="Markup"/>
+              <TI label="Markup (%)" value={f.markup} onChange={v=>setF(p=>({...p,markup:v}))} type="number"/>
+            </Card>
+            <div style={{background:C.P,borderRadius:12,padding:20,color:'#fff',marginBottom:14}}>
+              <div style={{fontWeight:800,fontSize:12,opacity:.7,textTransform:'uppercase',letterSpacing:1,marginBottom:14}}>Resultado</div>
+              {[['Custo Total',fmt(custoBase),14],['Preço de Venda',fmt(precoVenda),22],['Lucro Bruto',fmt(lucroBruto),14],['Margem de Lucro',`${margem.toFixed(1)}%`,14]].map(([l,v,sz])=>(
+                <div key={l} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'9px 0',borderBottom:'1px solid rgba(255,255,255,.15)'}}>
+                  <span style={{opacity:.8,fontSize:13}}>{l}</span><span style={{fontWeight:900,fontSize:sz}}>{v}</span>
+                </div>
+              ))}
+            </div>
+            <Btn onClick={save} style={{width:'100%'}}>{editId?'Atualizar Precificação':'💾 Salvar Precificação'}</Btn>
           </div>
         </div>
-      </div>
+      </Modal>}
     </div>
   );
 }
@@ -573,8 +665,7 @@ function Antecipacao(){
             <div style={{fontWeight:800,fontSize:12,opacity:.7,textTransform:'uppercase',letterSpacing:1,marginBottom:12}}>Resultado</div>
             {[['Taxa Aplicada',`${taxa}%`],['Valor Bruto',fmt(vBruto)],['Desconto (taxa)',`- ${fmt(desconto)}`],['Valor Líquido',fmt(vLiq)]].map(([l,v])=>(
               <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:'1px solid rgba(255,255,255,.15)'}}>
-                <span style={{opacity:.8,fontSize:13}}>{l}</span>
-                <span style={{fontWeight:900,fontSize:l==='Valor Líquido'?20:14}}>{v}</span>
+                <span style={{opacity:.8,fontSize:13}}>{l}</span><span style={{fontWeight:900,fontSize:l==='Valor Líquido'?20:14}}>{v}</span>
               </div>
             ))}
           </div>}
@@ -585,8 +676,7 @@ function Antecipacao(){
               <div style={{fontWeight:800,color:C.P,fontSize:13,marginBottom:10}}>{modLabel[mod]}</div>
               {Object.entries(taxas).map(([k,t])=>(
                 <div key={k} style={{display:'flex',justifyContent:'space-between',padding:'6px 4px',borderBottom:`1px solid ${C.BD}`,background:f.modalidade===mod&&f.pagamento===k?`${C.P}10`:undefined,borderRadius:4}}>
-                  <span style={{fontSize:12}}>{PGTO_LABELS[k]||k}</span>
-                  <span style={{fontWeight:800,color:t===0?'#166534':C.P,fontSize:12}}>{t===0?'Grátis':`${t}%`}</span>
+                  <span style={{fontSize:12}}>{PGTO_LABELS[k]||k}</span><span style={{fontWeight:800,color:t===0?'#166534':C.P,fontSize:12}}>{t===0?'Grátis':`${t}%`}</span>
                 </div>
               ))}
             </Card>
@@ -636,7 +726,7 @@ function Fornecedores({fornecedores,setFornecedores}){
   );
 }
 
-// ── MATERIAIS ─────────────────────────────────────────────────────────────────
+// ── MATÉRIA-PRIMA ─────────────────────────────────────────────────────────────
 function Materiais({materiais,setMateriais,fornecedores,tipos,setTipos}){
   const [modal,setModal]=useState(false);
   const E={tipoProduto:'',fornecedor:'',quantidade:'',custoUnitario:'',frete:'',data:todayStr(),obs:''};
@@ -653,7 +743,7 @@ function Materiais({materiais,setMateriais,fornecedores,tipos,setTipos}){
   };
   return(
     <div>
-      <PH title="Materiais" action={<Btn onClick={()=>setModal(true)}>+ Novo Material</Btn>}/>
+      <PH title="Matéria-Prima" sub="Insumos comprados para produção — controle separado do estoque de produtos prontos" action={<Btn onClick={()=>setModal(true)}>+ Novo Material</Btn>}/>
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:16}}>
         <SC title="Itens Cadastrados" value={materiais.length} icon="🧵" color={C.P}/>
         <SC title="Total em Estoque" value={fmtN(totEst)} icon="📦" color={C.S}/>
@@ -676,8 +766,7 @@ function Materiais({materiais,setMateriais,fornecedores,tipos,setTipos}){
           <TI label="Custo Unitário (R$)" value={f.custoUnitario} onChange={v=>setF(p=>({...p,custoUnitario:v}))} type="number"/>
         </Grid>
         <div style={{background:C.BG2,borderRadius:10,padding:14,marginBottom:14,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-          <span style={{fontWeight:700,fontSize:13}}>Custo Total do Lote:</span>
-          <span style={{fontWeight:900,color:C.P,fontSize:20}}>{fmt(custoLote)}</span>
+          <span style={{fontWeight:700,fontSize:13}}>Custo Total do Lote:</span><span style={{fontWeight:900,color:C.P,fontSize:20}}>{fmt(custoLote)}</span>
         </div>
         <TI label="Frete (R$)" value={f.frete} onChange={v=>setF(p=>({...p,frete:v}))} type="number" placeholder="0.00"/>
         <TI label="Data" value={f.data} onChange={v=>setF(p=>({...p,data:v}))} type="date"/>
@@ -695,12 +784,12 @@ function Relatorios({vendas,fin,contas,estoque}){
   const [fim,setFim]=useState(todayStr());
   const filtra=arr=>arr.filter(x=>x.data>=ini&&x.data<=fim);
   const vF=filtra(vendas);const finF=filtra(fin);
-  const totV=vF.reduce((s,v)=>s+v.valor,0);
+  const totV=vF.reduce((s,v)=>s+v.valorTotal,0);
   const ent=finF.filter(x=>x.tipo==='entrada').reduce((s,x)=>s+x.valor,0);
   const sai=finF.filter(x=>x.tipo==='saida').reduce((s,x)=>s+x.valor,0);
-  const byPgto=vF.reduce((a,v)=>{a[v.formaPagamento]=(a[v.formaPagamento]||0)+v.valor;return a;},{});
-  const byDia=vF.reduce((a,v)=>{a[v.data]=(a[v.data]||0)+v.valor;return a;},{});
-  const byCliente=vF.reduce((a,v)=>{a[v.clienteNome]=(a[v.clienteNome]||0)+v.valor;return a;},{});
+  const byPgto=vF.reduce((a,v)=>{a[v.formaPagamento]=(a[v.formaPagamento]||0)+v.valorTotal;return a;},{});
+  const byDia=vF.reduce((a,v)=>{a[v.data]=(a[v.data]||0)+v.valorTotal;return a;},{});
+  const byCliente=vF.reduce((a,v)=>{a[v.clienteNome]=(a[v.clienteNome]||0)+v.valorTotal;return a;},{});
   const tipos=[{v:'completo',l:'Relatório Completo'},{v:'vendas',l:'Vendas por Período'},{v:'vendas_diario',l:'Vendas Diárias'},{v:'fluxo',l:'Fluxo de Caixa'},{v:'contas_pagar',l:'Contas a Pagar'},{v:'contas_receber',l:'Contas a Receber'},{v:'estoque',l:'Estoque Completo'}];
   const show=k=>tipo==='completo'||tipo===k;
   return(
@@ -751,7 +840,7 @@ function Relatorios({vendas,fin,contas,estoque}){
 }
 
 // ── EXPORTAR ──────────────────────────────────────────────────────────────────
-function ExportModal({onClose,fin,contas,compras,vendas,clientes,estoque,custos,fornecedores,materiais}){
+function ExportModal({onClose,fin,contas,compras,vendas,clientes,estoque,custos,fornecedores,materiais,precificacoes}){
   const toCSV=(rows,cols)=>{
     if(!rows.length)return'Sem dados';
     const header=cols.join(';');
@@ -766,19 +855,20 @@ function ExportModal({onClose,fin,contas,compras,vendas,clientes,estoque,custos,
     a.click();
   };
   const exportJSON=()=>{
-    const data={fin,contas,compras,vendas,clientes,estoque,custos,fornecedores,materiais,exportadoEm:new Date().toISOString()};
+    const data={fin,contas,compras,vendas,clientes,estoque,custos,fornecedores,materiais,precificacoes,exportadoEm:new Date().toISOString()};
     download(JSON.stringify(data,null,2),`orlae-backup-${todayStr()}.json`,'application/json');
   };
   const sheets=[
     {l:'Financeiro',fn:`orlae-financeiro-${todayStr()}.csv`,rows:fin,cols:['data','tipo','categoria','descricao','valor']},
     {l:'Contas',fn:`orlae-contas-${todayStr()}.csv`,rows:contas,cols:['tipo','descricao','categoria','vencimento','valor','status']},
     {l:'Compras',fn:`orlae-compras-${todayStr()}.csv`,rows:compras,cols:['data','fornecedor','descricao','valor','dataEntrega','status']},
-    {l:'Vendas',fn:`orlae-vendas-${todayStr()}.csv`,rows:vendas,cols:['data','clienteNome','tipoProduto','sku','quantidade','valor','formaPagamento','tipoEntrega','freteValor']},
+    {l:'Vendas',fn:`orlae-vendas-${todayStr()}.csv`,rows:vendas,cols:['data','clienteNome','formaPagamento','desconto','valorTotal']},
     {l:'Clientes',fn:`orlae-clientes-${todayStr()}.csv`,rows:clientes,cols:['nome','email','telefone']},
     {l:'Estoque',fn:`orlae-estoque-${todayStr()}.csv`,rows:estoque,cols:['sku','nome','tipoProduto','cor','tamanho','quantidade','custoTotal','frete','custoUnitario']},
-    {l:'Custo de Produto',fn:`orlae-custos-${todayStr()}.csv`,rows:custos,cols:['tipoProduto','referencia','fornecedor','cor','tamanho','custoTotal','quantidade','custoUnitario','custoFinal']},
+    {l:'Custo de Produto',fn:`orlae-custos-${todayStr()}.csv`,rows:custos,cols:['tipoProduto','sku','colecao','fornecedor','custoTotal','frete','quantidade','custoUnitario','custoFinal']},
+    {l:'Precificação',fn:`orlae-precificacao-${todayStr()}.csv`,rows:precificacoes,cols:['tipoProduto','sku','custoBase','markup','precoVenda','margem']},
     {l:'Fornecedores',fn:`orlae-fornecedores-${todayStr()}.csv`,rows:fornecedores,cols:['nome','cnpj','email','telefone','endereco','site']},
-    {l:'Materiais',fn:`orlae-materiais-${todayStr()}.csv`,rows:materiais,cols:['data','tipoProduto','fornecedor','quantidade','custoUnitario','frete','custoTotal']},
+    {l:'Matéria-Prima',fn:`orlae-materiais-${todayStr()}.csv`,rows:materiais,cols:['data','tipoProduto','fornecedor','quantidade','custoUnitario','frete','custoTotal']},
   ];
   return(
     <Modal title="Exportar Dados" onClose={onClose}>
@@ -817,12 +907,13 @@ export default function App() {
   const [custos, setCustos] = useStore('custos', []);
   const [fornecedores, setFornecedores] = useStore('fornecedores', []);
   const [materiais, setMateriais] = useStore('materiais', []);
+  const [precificacoes, setPrecificacoes] = useStore('precificacoes', []);
   const [tipos, setTipos] = useStore('tipos', TIPOS_BASE);
 
   useEffect(() => {
     const s = document.createElement('style');
     s.textContent = `
-      @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=Cormorant+Garamond:wght@300;400&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap');
       * { font-family: 'DM Sans', system-ui, sans-serif; box-sizing: border-box; }
       body { margin: 0; background: ${C.BG}; }
       ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -837,11 +928,11 @@ export default function App() {
     financeiro: <Financeiro fin={fin} setFin={setFin}/>,
     contas: <Contas contas={contas} setContas={setContas}/>,
     compras: <Compras compras={compras} setCompras={setCompras} fornecedores={fornecedores}/>,
-    vendas: <Vendas vendas={vendas} setVendas={setVendas} clientes={clientes} estoque={estoque} setEstoque={setEstoque} tipos={tipos}/>,
+    vendas: <Vendas vendas={vendas} setVendas={setVendas} clientes={clientes} estoque={estoque} setEstoque={setEstoque} tipos={tipos} precificacoes={precificacoes}/>,
     clientes: <Clientes clientes={clientes} setClientes={setClientes}/>,
     estoque: <Estoque estoque={estoque} setEstoque={setEstoque} tipos={tipos}/>,
     custo: <CustoProduto custos={custos} setCustos={setCustos} fornecedores={fornecedores} tipos={tipos} setTipos={setTipos}/>,
-    precificacao: <Precificacao tipos={tipos}/>,
+    precificacao: <Precificacao tipos={tipos} precificacoes={precificacoes} setPrecificacoes={setPrecificacoes} custos={custos}/>,
     antecipacao: <Antecipacao/>,
     fornecedores: <Fornecedores fornecedores={fornecedores} setFornecedores={setFornecedores}/>,
     materiais: <Materiais materiais={materiais} setMateriais={setMateriais} fornecedores={fornecedores} tipos={tipos} setTipos={setTipos}/>,
@@ -850,7 +941,6 @@ export default function App() {
 
   return (
     <div style={{display:'flex',height:'100vh',background:C.BG,overflow:'hidden'}}>
-      {/* SIDEBAR */}
       <div style={{width:open?238:60,background:C.P,flexShrink:0,display:'flex',flexDirection:'column',transition:'width .25s',overflow:'hidden'}}>
         <div style={{padding:open?'18px 18px 14px':'16px 11px',borderBottom:'1px solid rgba(255,255,255,.12)',flexShrink:0,minHeight:72,display:'flex',alignItems:'center'}}>
           <OrlaeLogo collapsed={!open}/>
@@ -872,11 +962,10 @@ export default function App() {
           </button>
         </div>
       </div>
-      {/* MAIN */}
       <div style={{flex:1,overflowY:'auto',overflowX:'hidden',padding:28}}>
         {pages[active]}
       </div>
-      {exportOpen&&<ExportModal onClose={()=>setExportOpen(false)} fin={fin} contas={contas} compras={compras} vendas={vendas} clientes={clientes} estoque={estoque} custos={custos} fornecedores={fornecedores} materiais={materiais}/>}
+      {exportOpen&&<ExportModal onClose={()=>setExportOpen(false)} fin={fin} contas={contas} compras={compras} vendas={vendas} clientes={clientes} estoque={estoque} custos={custos} fornecedores={fornecedores} materiais={materiais} precificacoes={precificacoes}/>}
     </div>
   );
 }
