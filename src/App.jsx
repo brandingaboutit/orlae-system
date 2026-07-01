@@ -542,16 +542,16 @@ function CustoProduto({custos,setCustos,fornecedores,tipos,setTipos}){
 // ── PRECIFICAÇÃO ──────────────────────────────────────────────────────────────
 function Precificacao({tipos,precificacoes,setPrecificacoes,custos}){
   const PARC_OPC=[0,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,7,8,9,10];
-  const EE={caixa:'',papelEmbrulho:'',etiqueta:'',tag:'',lacre:'',adesivo:'',outros:''};
+  const EE={caixa:'',papelEmbrulho:'',sacola:'',tag:'',lacre:'',adesivo:'',estampa:'',caixaEnvio:'',outros:''};
   const EF={tipoProduto:'',sku:'',custoProduto:'',custoFrete:'',imposto:'',impostoFrete:'',taxaPlataforma:'',taxaGateway:'',taxaParcelamento:'',custoMarketing:'',markup:'100',emb:EE};
   const [modal,setModal]=useState(false);
   const [editId,setEditId]=useState(null);
   const [f,setF]=useState(EF);
   const setE=(k,v)=>setF(p=>({...p,emb:{...p.emb,[k]:v}}));
-  const custoEmb=Object.values(f.emb).reduce((s,v)=>s+n(v),0);
-  const custoBase=n(f.custoProduto)+n(f.custoFrete)+n(f.imposto)+n(f.impostoFrete)+n(f.taxaPlataforma)+n(f.taxaGateway)+n(f.taxaParcelamento)+n(f.custoMarketing)+custoEmb;
-  const precoVenda=custoBase*(1+n(f.markup)/100);
-  const lucroBruto=precoVenda-custoBase;
+  const fatorMarkup = n(f.markup) > 0 ? n(f.markup) : 1;
+  const markupValorCalc = custoBase * (fatorMarkup - 1);
+  const markupValorAtivo = f.markupValor !== '' ? n(f.markupValor) : markupValorCalc;
+  const precoVenda = f.markupValor !== '' ? custoBase + markupValorAtivo : custoBase * fatorMarkup;
   const margem=precoVenda>0?(lucroBruto/precoVenda)*100:0;
 
   const puxarCusto=(tipoProduto)=>{
@@ -601,7 +601,7 @@ function Precificacao({tipos,precificacoes,setPrecificacoes,custos}){
             </Card>
             <Card>
               <Divider label="Custo de Embalagem"/>
-              {[['caixa','Caixa de Envio'],['papelEmbrulho','Papel de Embrulho'],['etiqueta','Etiqueta'],['tag','Tag'],['lacre','Lacre'],['adesivo','Adesivo'],['outros','Outros']].map(([k,l])=>(
+              {[['caixa','Caixa de Envio'],['papelEmbrulho','Papel de Embrulho'],['sacola','Sacola'],['tag','Tag'],['lacre','Lacre'],['adesivo','Adesivo'],['estampa','Estampa'],['caixaEnvio','Caixa'],['outros','Outros']].map(([k,l])=>(
                 <TI key={k} label={`${l} (R$)`} value={f.emb[k]} onChange={v=>setE(k,v)} type="number" placeholder="0.00"/>
               ))}
               <div style={{background:C.BG2,borderRadius:8,padding:10,display:'flex',justifyContent:'space-between'}}>
@@ -623,8 +623,12 @@ function Precificacao({tipos,precificacoes,setPrecificacoes,custos}){
             </Card>
             <Card style={{marginBottom:12}}>
               <Divider label="Markup"/>
-              <TI label="Markup (%)" value={f.markup} onChange={v=>setF(p=>({...p,markup:v}))} type="number"/>
-            </Card>
+              <TI label="Fator de Multiplicação (ex: 2 = dobro do custo)" value={f.markup} onChange={onMarkupPctChange} type="number" placeholder="ex: 2"/>
+              <div style={{background:C.BG2,borderRadius:8,padding:'8px 12px',marginBottom:14,fontSize:12,color:C.TM}}>
+                Preço = Custo Total × {n(f.markup)||1} = <strong>{fmt(custoBase * (n(f.markup)||1))}</strong>
+              </div>
+              <TI label="Valor do Markup (R$) — editável para ajuste fino" value={f.markupValor!==''?f.markupValor:markupValorCalc.toFixed(2)} onChange={onMarkupValorChange} type="number"/>
+              <div style={{fontSize:11,color:'#bbb'}}>💡 Edite este campo para ajustar o valor final sem alterar o fator.</div>            </Card>
             <div style={{background:C.P,borderRadius:12,padding:20,color:'#fff',marginBottom:14}}>
               <div style={{fontWeight:800,fontSize:12,opacity:.7,textTransform:'uppercase',letterSpacing:1,marginBottom:14}}>Resultado</div>
               {[['Custo Total',fmt(custoBase),14],['Preço de Venda',fmt(precoVenda),22],['Lucro Bruto',fmt(lucroBruto),14],['Margem de Lucro',`${margem.toFixed(1)}%`,14]].map(([l,v,sz])=>(
