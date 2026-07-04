@@ -175,6 +175,7 @@ function Dashboard({fin,contas,estoque,vendas}){
 function Financeiro({fin,setFin}){
   const [modal,setModal]=useState(false);
   const [editId,setEditId]=useState(null);
+  const [reciboVenda,setReciboVenda]=useState(null);
   const EF={tipo:'entrada',descricao:'',valor:'',data:todayStr(),categoria:''};
   const [f,setF]=useState(EF);
   const [filtTipo,setFiltTipo]=useState('');
@@ -396,7 +397,10 @@ function Vendas({vendas,setVendas,clientes,estoque,setEstoque,tipos,precificacoe
         {l:'Pagamento',k:'formaPagamento',render:r=>PGTO_LABELS[r.formaPagamento]||r.formaPagamento},
         {l:'Desconto',k:'desconto',render:r=>r.desconto?fmt(r.desconto):'-'},
         {l:'Total',k:'valorTotal',render:r=><span style={{fontWeight:800,color:C.P}}>{fmt(r.valorTotal)}</span>},
-        {l:'',k:'_',render:r=><ActBtns onEdit={()=>abrirEdicao(r)} onDelete={()=>setVendas(p=>p.filter(x=>x.id!==r.id))}/>},
+        {l:'',k:'_',render:r=><div style={{display:'flex',gap:4}}>
+          <Btn sm onClick={()=>setReciboVenda(r)} color={C.S}>📄 Recibo</Btn>
+          <ActBtns onEdit={()=>abrirEdicao(r)} onDelete={()=>setVendas(p=>p.filter(x=>x.id!==r.id))}/>
+        </div>},
       ]} rows={[...vendas].sort((a,b)=>b.data?.localeCompare(a.data))}/></Card>
       {modal&&<Modal title={editId?'Editar Venda':'Nova Venda'} onClose={()=>setModal(false)} wide>
         <DI label="Cliente *" value={f.clienteNome} onChange={v=>setF(p=>({...p,clienteNome:v}))} options={clientes.map(c=>c.nome)} listId="vnd-cli" placeholder="Nome do cliente"/>
@@ -645,7 +649,127 @@ function Precificacao({tipos,precificacoes,setPrecificacoes,custos}){
   );
 }
 
-// ── ANTECIPAÇÃO ───────────────────────────────────────────────────────────────
+// ── RECIBO ────────────────────────────────────────────────────────────────────
+function ReciboModal({venda, onClose}){
+  const gerarPDF = () => {
+    const itensHTML = (venda.itens||[]).map(i=>`
+      <tr>
+        <td style="padding:8px 6px;border-bottom:1px solid #eee;">${i.tipoProduto||'-'}</td>
+        <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:center;">${i.sku||'-'}</td>
+        <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:center;">${i.quantidade||1}</td>
+        <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:right;">${fmt(i.valorUnitario||0)}</td>
+        <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:right;font-weight:700;">${fmt(i.subtotal||0)}</td>
+      </tr>`).join('');
+    const pgtoLabel={pix:'Pix',debito:'Cartão de Débito',credito_1x:'Crédito à Vista',credito_2x:'Crédito 2x',credito_3x:'Crédito 3x',credito_4x:'Crédito 4x',credito_5x:'Crédito 5x',credito_6x:'Crédito 6x'};
+    const entregaLabel = venda.tipoEntrega==='retirada'?'Retirada na loja':`Envio — ${venda.formaEnvio==='pac'?'Correios PAC':venda.formaEnvio==='sedex'?'Correios Sedex':venda.transportadora||'Transportadora'}`;
+    const w = window.open('','_blank','width=800,height=900');
+    w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Recibo Orlaê</title>
+    <style>
+      *{margin:0;padding:0;box-sizing:border-box;}
+      body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#1a0508;padding:40px;max-width:700px;margin:0 auto;}
+      .header{text-align:center;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid #700c14;}
+      .logo{width:180px;margin-bottom:10px;}
+      .store-info{font-size:13px;color:#555;line-height:1.8;}
+      .store-info span{display:block;}
+      .title{font-size:20px;font-weight:700;color:#700c14;margin:20px 0 6px;}
+      .meta{display:flex;justify-content:space-between;font-size:13px;color:#666;margin-bottom:20px;}
+      .section-label{font-size:11px;font-weight:700;color:#700c14;text-transform:uppercase;letter-spacing:1px;margin:18px 0 8px;}
+      .client-box{background:#faf7f0;border-radius:8px;padding:12px 16px;font-size:14px;margin-bottom:16px;}
+      table{width:100%;border-collapse:collapse;font-size:13px;}
+      thead tr{background:#700c14;color:#fff;}
+      thead td{padding:10px 6px;font-weight:600;}
+      .totals{margin-top:16px;text-align:right;}
+      .totals .row{display:flex;justify-content:flex-end;gap:40px;padding:5px 0;font-size:14px;}
+      .totals .row.total{font-size:18px;font-weight:800;color:#700c14;border-top:2px solid #700c14;margin-top:8px;padding-top:10px;}
+      .payment-box{background:#faf7f0;border-radius:8px;padding:12px 16px;font-size:13px;margin-top:16px;display:flex;justify-content:space-between;}
+      .footer{margin-top:36px;text-align:center;font-size:12px;color:#999;border-top:1px solid #eee;padding-top:16px;}
+      @media print{body{padding:20px;}@page{margin:15mm;}}
+    </style></head><body>
+    <div class="header">
+      <img src="${LOGO_URL}" class="logo" onerror="this.style.display='none'"/>
+      <div class="store-info">
+        <span>✉ useorlae@gmail.com</span>
+        <span>📱 (21) 99015-4918</span>
+        <span>📷 @useorlae</span>
+      </div>
+    </div>
+    <div class="title">Recibo de Venda</div>
+    <div class="meta">
+      <span>Data: <strong>${venda.data||'-'}</strong></span>
+      <span>Nº: <strong>${(venda.id||'').slice(-6).toUpperCase()}</strong></span>
+    </div>
+    <div class="section-label">Cliente</div>
+    <div class="client-box">${venda.clienteNome||'Não informado'}</div>
+    <div class="section-label">Itens</div>
+    <table>
+      <thead><tr>
+        <td>Produto</td><td style="text-align:center;">SKU</td>
+        <td style="text-align:center;">Qtde</td>
+        <td style="text-align:right;">V. Unit.</td>
+        <td style="text-align:right;">Subtotal</td>
+      </tr></thead>
+      <tbody>${itensHTML}</tbody>
+    </table>
+    <div class="totals">
+      <div class="row"><span>Subtotal</span><span>${fmt(venda.subtotal||0)}</span></div>
+      ${n(venda.desconto)>0?`<div class="row"><span>Desconto</span><span>- ${fmt(venda.desconto)}</span></div>`:''}
+      ${venda.tipoEntrega==='envio'&&n(venda.freteValor)>0?`<div class="row"><span>Frete</span><span>${fmt(venda.freteValor)}</span></div>`:''}
+      <div class="row total"><span>Total</span><span>${fmt(venda.valorTotal||0)}</span></div>
+    </div>
+    <div class="payment-box">
+      <span>💳 <strong>Pagamento:</strong> ${pgtoLabel[venda.formaPagamento]||venda.formaPagamento||'-'}</span>
+      <span>📦 <strong>Entrega:</strong> ${entregaLabel}</span>
+    </div>
+    <div class="footer">
+      Obrigada pela sua compra! ✨<br/>
+      Orlaê — useorlae@gmail.com · (21) 99015-4918 · @useorlae
+    </div>
+    <script>window.onload=()=>{window.print();}<\/script>
+    </body></html>`);
+    w.document.close();
+  };
+
+  const pgtoLabel={pix:'Pix',debito:'Cartão de Débito',credito_1x:'Crédito à Vista',credito_2x:'Crédito 2x',credito_3x:'Crédito 3x',credito_4x:'Crédito 4x',credito_5x:'Crédito 5x',credito_6x:'Crédito 6x'};
+  return(
+    <Modal title="Recibo de Venda" onClose={onClose}>
+      {/* Prévia */}
+      <div style={{background:C.BG,borderRadius:12,padding:20,marginBottom:20,border:`1px solid ${C.BD}`}}>
+        <div style={{textAlign:'center',marginBottom:16,paddingBottom:16,borderBottom:`2px solid ${C.P}`}}>
+          <img src={LOGO_URL} alt="Orlaê" style={{width:120,display:'block',margin:'0 auto 8px'}}/>
+          <div style={{fontSize:12,color:'#888',lineHeight:1.9}}>
+            <div>✉ useorlae@gmail.com</div>
+            <div>📱 (21) 99015-4918</div>
+            <div>📷 @useorlae</div>
+          </div>
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',fontSize:12,color:'#888',marginBottom:12}}>
+          <span>Data: <strong style={{color:C.T}}>{venda.data}</strong></span>
+          <span>Nº: <strong style={{color:C.T}}>{(venda.id||'').slice(-6).toUpperCase()}</strong></span>
+        </div>
+        <div style={{fontSize:11,fontWeight:700,color:C.P,textTransform:'uppercase',letterSpacing:1,marginBottom:6}}>Cliente</div>
+        <div style={{background:'#fff',borderRadius:8,padding:'10px 14px',fontSize:14,marginBottom:14,border:`1px solid ${C.BD}`}}>{venda.clienteNome||'Não informado'}</div>
+        <div style={{fontSize:11,fontWeight:700,color:C.P,textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>Itens</div>
+        {(venda.itens||[]).map(i=>(
+          <div key={i.id} style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:`1px solid ${C.BD}`,fontSize:13}}>
+            <span>{i.quantidade}x {i.tipoProduto} {i.sku?`(${i.sku})`:''}</span>
+            <span style={{fontWeight:700}}>{fmt(i.subtotal||0)}</span>
+          </div>
+        ))}
+        <div style={{marginTop:12,textAlign:'right'}}>
+          {n(venda.desconto)>0&&<div style={{fontSize:13,color:'#888'}}>Desconto: - {fmt(venda.desconto)}</div>}
+          {venda.tipoEntrega==='envio'&&n(venda.freteValor)>0&&<div style={{fontSize:13,color:'#888'}}>Frete: {fmt(venda.freteValor)}</div>}
+          <div style={{fontSize:18,fontWeight:900,color:C.P,marginTop:6}}>Total: {fmt(venda.valorTotal||0)}</div>
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',background:'#fff',borderRadius:8,padding:'10px 14px',marginTop:12,fontSize:12,border:`1px solid ${C.BD}`}}>
+          <span>💳 {pgtoLabel[venda.formaPagamento]||venda.formaPagamento}</span>
+          <span>📦 {venda.tipoEntrega==='retirada'?'Retirada':venda.formaEnvio==='pac'?'Correios PAC':venda.formaEnvio==='sedex'?'Correios Sedex':venda.transportadora||'Transportadora'}</span>
+        </div>
+        <div style={{textAlign:'center',marginTop:16,fontSize:12,color:'#bbb'}}>Obrigada pela sua compra! ✨</div>
+      </div>
+      <Btn onClick={gerarPDF} style={{width:'100%'}}>⬇ Exportar PDF</Btn>
+    </Modal>
+  );
+}
 function Antecipacao(){
   const [f,setF]=useState({modalidade:'mesmo_dia',pagamento:'pix',valor:''});
   const pgtosPorMod={mesmo_dia:[{v:'pix',l:'Pix'},{v:'debito',l:'Cartão de Débito'},{v:'credito_1x',l:'Crédito à Vista'},{v:'credito_2x',l:'Crédito 2x'},{v:'credito_3x',l:'Crédito 3x'},{v:'credito_4x',l:'Crédito 4x'},{v:'credito_5x',l:'Crédito 5x'},{v:'credito_6x',l:'Crédito 6x'}],um_dia:[{v:'pix',l:'Pix'},{v:'debito',l:'Cartão de Débito'},{v:'credito_1x',l:'Crédito à Vista'},{v:'credito_2x',l:'Crédito 2x'},{v:'credito_3x',l:'Crédito 3x'},{v:'credito_4x',l:'Crédito 4x'},{v:'credito_5x',l:'Crédito 5x'},{v:'credito_6x',l:'Crédito 6x'}],sem_antecipacao:[{v:'credito_1x',l:'Crédito à Vista'},{v:'credito_2x',l:'Crédito 2x'},{v:'credito_3x',l:'Crédito 3x'},{v:'credito_4x',l:'Crédito 4x'},{v:'credito_5x',l:'Crédito 5x'},{v:'credito_6x',l:'Crédito 6x'}]};
