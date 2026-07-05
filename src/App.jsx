@@ -12,78 +12,85 @@ const TAXAS = {
   um_dia:{pix:0,debito:1.37,credito_1x:3.15,credito_2x:5.39,credito_3x:6.12,credito_4x:6.85,credito_5x:7.57,credito_6x:8.28},
   sem_antecipacao:{credito_1x:2.22,credito_2x:2.75,credito_3x:2.75,credito_4x:2.75,credito_5x:2.75,credito_6x:2.75}
 };
-const PGTO_LABELS = {pix:'Pix',debito:'Débito',credito_1x:'Crédito à Vista',credito_2x:'Crédito 2x',credito_3x:'Crédito 3x',credito_4x:'Crédito 4x',credito_5x:'Crédito 5x',credito_6x:'Crédito 6x'};
-const TIPOS_BASE = ['Botton','Copo Americano','Caneca','Garrafa Térmica','Copo Térmico','Copo de Vidro'];
-const TAMANHOS_BASE = ['Único','P','M','G','GG'];
-const LOGO_URL = "https://res.cloudinary.com/djnerbs5w/image/upload/f_auto,q_auto/F2EBD9_qgv2cw";
+const PGTO_LABELS={pix:'Pix',debito:'Débito',credito_1x:'Crédito à Vista',credito_2x:'Crédito 2x',credito_3x:'Crédito 3x',credito_4x:'Crédito 4x',credito_5x:'Crédito 5x',credito_6x:'Crédito 6x'};
+const TIPOS_BASE=['Botton','Copo Americano','Caneca','Garrafa Térmica','Copo Térmico','Copo de Vidro'];
+const TAMANHOS_BASE=['Único','P','M','G','GG'];
+const LOGO_URL="https://res.cloudinary.com/djnerbs5w/image/upload/f_auto,q_auto/F2EBD9_qgv2cw";
+const STORE={email:'useorlae@gmail.com',whatsapp:'(21) 99015-4918',instagram:'@useorlae'};
 
-const NAV = [
-  {id:'dashboard',l:'Dashboard',ico:'◈'},
-  {id:'financeiro',l:'Financeiro',ico:'💰'},
-  {id:'contas',l:'Contas',ico:'📋'},
-  {id:'compras',l:'Compras',ico:'🛒'},
-  {id:'vendas',l:'Vendas',ico:'🛍️'},
-  {id:'clientes',l:'Clientes',ico:'👤'},
-  {id:'produtos',l:'Cadastro de Produtos',ico:'🗂️'},
-  {id:'estoque',l:'Estoque de Produtos',ico:'📦'},
-  {id:'custo',l:'Custo de Produto',ico:'🏷️'},
-  {id:'precificacao',l:'Precificação',ico:'💲'},
-  {id:'antecipacao',l:'Antecipação',ico:'⚡'},
-  {id:'fornecedores',l:'Fornecedores',ico:'🏭'},
-  {id:'materiais',l:'Matéria-Prima',ico:'🧵'},
-  {id:'relatorios',l:'Relatórios',ico:'📊'},
+const NAV=[
+  {id:'dashboard',l:'Dashboard',ico:'◈'},{id:'financeiro',l:'Financeiro',ico:'💰'},
+  {id:'contas',l:'Contas',ico:'📋'},{id:'compras',l:'Compras',ico:'🛒'},
+  {id:'vendas',l:'Vendas',ico:'🛍️'},{id:'clientes',l:'Clientes',ico:'👤'},
+  {id:'produtos',l:'Cadastro de Produtos',ico:'🗂️'},{id:'estoque',l:'Estoque de Produtos',ico:'📦'},
+  {id:'custo',l:'Custo de Produto',ico:'🏷️'},{id:'precificacao',l:'Precificação',ico:'💲'},
+  {id:'antecipacao',l:'Antecipação',ico:'⚡'},{id:'fornecedores',l:'Fornecedores',ico:'🏭'},
+  {id:'materiais',l:'Matéria-Prima',ico:'🧵'},{id:'relatorios',l:'Relatórios',ico:'📊'},
 ];
 
-// ── localStorage hook ─────────────────────────────────────────────────────────
-function useStore(key, init) {
-  const [val, setVal] = useState(() => {
-    try { const s = localStorage.getItem(`orlae-${key}`); return s ? JSON.parse(s) : init; }
-    catch(e) { return init; }
-  });
-  const save = useCallback(fn => {
-    setVal(prev => {
-      const next = typeof fn === 'function' ? fn(prev) : fn;
-      try { localStorage.setItem(`orlae-${key}`, JSON.stringify(next)); } catch(e) {}
-      return next;
-    });
-  }, [key]);
-  return [val, save];
+function useStore(key,init){
+  const [val,setVal]=useState(()=>{try{const s=localStorage.getItem(`orlae-${key}`);return s?JSON.parse(s):init;}catch(e){return init;}});
+  const save=useCallback(fn=>{setVal(prev=>{const next=typeof fn==='function'?fn(prev):fn;try{localStorage.setItem(`orlae-${key}`,JSON.stringify(next));}catch(e){}return next;});},[key]);
+  return [val,save];
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const imprimirHTML=(htmlContent,titulo='Orlaê')=>{
+  const pid='orlae-print-'+Date.now();
+  const div=document.createElement('div');
+  div.id=pid;
+  div.innerHTML=htmlContent;
+  Object.assign(div.style,{position:'fixed',top:0,left:0,width:'100%',height:'100%',background:'#fff',zIndex:99999,overflow:'auto',padding:'30px',boxSizing:'border-box'});
+  document.body.appendChild(div);
+  const css=document.createElement('style');
+  css.textContent=`@media print{body>*:not(#${pid}){display:none!important}#${pid}{display:block!important;position:static!important}}`;
+  document.head.appendChild(css);
+  window.print();
+  setTimeout(()=>{try{document.body.removeChild(div);document.head.removeChild(css);}catch(e){}},1500);
+};
+
+const exportCSV=(rows,cols,filename)=>{
+  if(!rows.length)return;
+  const csv=[cols.map(c=>c.l).join(';'),...rows.map(r=>cols.map(c=>{const v=r[c.k]??'';return typeof v==='string'&&v.includes(';')?`"${v}"`:v;}).join(';'))].join('\n');
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`orlae-${filename}-${todayStr()}.csv`;
+  a.click();
+};
+
 // ── Logo ──────────────────────────────────────────────────────────────────────
-const OrlaeLogo = ({collapsed}) => collapsed
-  ? <div style={{width:38,height:38,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-      <img src={LOGO_URL} alt="Orlaê" style={{width:38,height:38,objectFit:'contain'}}/>
-    </div>
-  : <div style={{display:'flex',flexDirection:'column',gap:4}}>
-      <img src={LOGO_URL} alt="Orlaê" style={{width:130,objectFit:'contain',display:'block'}}/>
-      <div style={{color:'rgba(255,255,255,.38)',fontSize:9,whiteSpace:'nowrap',letterSpacing:2.5,textTransform:'uppercase',fontWeight:500}}>Brand Management</div>
-    </div>;
+const OrlaeLogo=({collapsed})=>collapsed
+  ?<div style={{width:38,height:38,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><img src={LOGO_URL} alt="Orlaê" style={{width:38,height:38,objectFit:'contain'}}/></div>
+  :<div style={{display:'flex',flexDirection:'column',gap:4}}>
+    <img src={LOGO_URL} alt="Orlaê" style={{width:130,objectFit:'contain',display:'block'}}/>
+    <div style={{color:'rgba(255,255,255,.38)',fontSize:9,whiteSpace:'nowrap',letterSpacing:2.5,textTransform:'uppercase',fontWeight:500}}>Brand Management</div>
+  </div>;
 
 // ── UI Primitives ─────────────────────────────────────────────────────────────
-const inp = {width:'100%',padding:'9px 12px',border:`1px solid ${C.BD}`,borderRadius:8,background:'#fff',fontSize:13,fontFamily:'inherit',boxSizing:'border-box',outline:'none'};
-const inpRO = {...inp,background:C.BG2,color:C.S,fontWeight:800};
-const lbl = {display:'block',fontSize:11,fontWeight:700,color:C.TM,marginBottom:4,letterSpacing:0.3};
-const F = ({label,children,style={}}) => <div style={{marginBottom:14,...style}}>{label&&<label style={lbl}>{label}</label>}{children}</div>;
-const TI = ({label,value,onChange,type='text',placeholder='',readOnly=false,style={},...r}) => (
+const inp={width:'100%',padding:'9px 12px',border:`1px solid ${C.BD}`,borderRadius:8,background:'#fff',fontSize:13,fontFamily:'inherit',boxSizing:'border-box',outline:'none'};
+const inpRO={...inp,background:C.BG2,color:C.S,fontWeight:800};
+const lbl={display:'block',fontSize:11,fontWeight:700,color:C.TM,marginBottom:4,letterSpacing:0.3};
+const F=({label,children,style={}})=><div style={{marginBottom:14,...style}}>{label&&<label style={lbl}>{label}</label>}{children}</div>;
+const TI=({label,value,onChange,type='text',placeholder='',readOnly=false,style={},...r})=>(
   <F label={label} style={style}><input value={value??''} onChange={e=>onChange&&onChange(e.target.value)} type={type} placeholder={placeholder} readOnly={readOnly} style={readOnly?inpRO:inp} {...r}/></F>
 );
-const SI = ({label,value,onChange,options=[],style={}}) => (
+const SI=({label,value,onChange,options=[],style={}})=>(
   <F label={label} style={style}><select value={value??''} onChange={e=>onChange(e.target.value)} style={inp}><option value=''>— Selecionar —</option>{options.map(o=><option key={o.v??o} value={o.v??o}>{o.l??o}</option>)}</select></F>
 );
-const DI = ({label,value,onChange,options=[],listId,placeholder='',style={}}) => (
+const DI=({label,value,onChange,options=[],listId,placeholder='',style={}})=>(
   <F label={label} style={style}><input value={value??''} onChange={e=>onChange(e.target.value)} list={listId} placeholder={placeholder} style={inp}/><datalist id={listId}>{options.map(o=><option key={o} value={o}/>)}</datalist></F>
 );
-const Btn = ({children,onClick,color=C.P,outline=false,sm=false,style={}}) => (
-  <button onClick={onClick} style={{background:outline?'transparent':color,color:outline?color:'#fff',border:`1.5px solid ${color}`,borderRadius:8,padding:sm?'5px 12px':'9px 22px',fontSize:sm?11:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',...style}}>{children}</button>
+const Btn=({children,onClick,color=C.P,outline=false,sm=false,style={}})=>(
+  <button onClick={onClick} style={{background:outline?'transparent':color,color:outline?color:'#fff',border:`1.5px solid ${color}`,borderRadius:8,padding:sm?'5px 10px':'9px 22px',fontSize:sm?11:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',...style}}>{children}</button>
 );
-const Bdg = ({children,type='default'}) => {
-  const m={default:{bg:`${C.P}18`,c:C.P},success:{bg:'#dcfce7',c:'#166534'},warning:{bg:'#fef9c3',c:'#713f12'},danger:{bg:'#fee2e2',c:'#991b1b'},info:{bg:'#e0f2fe',c:'#0369a1'}};
+const Bdg=({children,type='default'})=>{
+  const m={default:{bg:`${C.P}18`,c:C.P},success:{bg:'#dcfce7',c:'#166534'},warning:{bg:'#fef9c3',c:'#713f12'},danger:{bg:'#fee2e2',c:'#991b1b'},info:{bg:'#e0f2fe',c:'#0369a1'},venda:{bg:'#f3e8ff',c:'#7e22ce'}};
   const s=m[type]||m.default;
   return <span style={{background:s.bg,color:s.c,borderRadius:20,padding:'3px 10px',fontSize:11,fontWeight:700,whiteSpace:'nowrap'}}>{children}</span>;
 };
-const Card = ({children,style={}}) => <div style={{background:'#fff',border:`1px solid ${C.BD}`,borderRadius:12,padding:20,...style}}>{children}</div>;
-const SC = ({title,value,sub,icon,color=C.P}) => (
+const Card=({children,style={}})=><div style={{background:'#fff',border:`1px solid ${C.BD}`,borderRadius:12,padding:20,...style}}>{children}</div>;
+const SC=({title,value,sub,icon,color=C.P})=>(
   <div style={{background:'#fff',border:`1px solid ${C.BD}`,borderRadius:12,padding:'16px 20px',display:'flex',alignItems:'center',gap:14}}>
     <div style={{width:46,height:46,borderRadius:12,background:`${color}18`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>{icon}</div>
     <div><div style={{fontSize:10,fontWeight:700,color:'#aaa',textTransform:'uppercase',letterSpacing:1}}>{title}</div>
@@ -91,12 +98,12 @@ const SC = ({title,value,sub,icon,color=C.P}) => (
     {sub&&<div style={{fontSize:11,color:'#bbb',marginTop:1}}>{sub}</div>}</div>
   </div>
 );
-const PH = ({title,action,sub}) => (
+const PH=({title,action,sub})=>(
   <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:24}}>
     <div><h2 style={{margin:0,color:C.P,fontSize:20,fontWeight:800}}>{title}</h2>{sub&&<p style={{margin:'2px 0 0',color:'#bbb',fontSize:12}}>{sub}</p>}</div>{action}
   </div>
 );
-const Tbl = ({cols,rows,empty='Nenhum registro.'}) => (
+const Tbl=({cols,rows,empty='Nenhum registro.'})=>(
   <div style={{overflowX:'auto'}}>
     <table style={{width:'100%',borderCollapse:'collapse'}}>
       <thead><tr>{cols.map(c=><th key={c.k||c.l} style={{padding:'10px 14px',textAlign:'left',fontSize:11,fontWeight:700,color:C.TM,borderBottom:`2px solid ${C.BD}`,background:C.BG2,whiteSpace:'nowrap'}}>{c.l}</th>)}</tr></thead>
@@ -108,7 +115,7 @@ const Tbl = ({cols,rows,empty='Nenhum registro.'}) => (
     </table>
   </div>
 );
-const Modal = ({title,onClose,children,wide=false}) => (
+const Modal=({title,onClose,children,wide=false})=>(
   <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.45)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
     <div style={{background:'#fff',borderRadius:16,width:'100%',maxWidth:wide?760:560,maxHeight:'92vh',overflow:'auto',boxShadow:'0 24px 80px rgba(0,0,0,.2)'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'18px 24px',borderBottom:`1px solid ${C.BD}`,position:'sticky',top:0,background:'#fff',zIndex:1}}>
@@ -119,16 +126,16 @@ const Modal = ({title,onClose,children,wide=false}) => (
     </div>
   </div>
 );
-const Grid = ({cols='1fr 1fr',children,gap=12}) => <div style={{display:'grid',gridTemplateColumns:cols,gap}}>{children}</div>;
-const Divider = ({label}) => <div style={{margin:'16px 0 12px',fontSize:11,fontWeight:800,color:C.TM,textTransform:'uppercase',letterSpacing:1,borderBottom:`1px solid ${C.BD}`,paddingBottom:6}}>{label}</div>;
-const stEst = q => q===0?{t:'default',l:'Sem Estoque'}:q<25?{t:'danger',l:'Ruim (<25)'}:q<=50?{t:'warning',l:'Mínimo (≤50)'}:{t:'success',l:'Bom (>50)'};
-const ActBtns = ({onEdit,onDelete}) => <div style={{display:'flex',gap:4}}><Btn sm onClick={onEdit}>✎ Editar</Btn><Btn sm outline color={C.P} onClick={onDelete}>✕</Btn></div>;
+const Grid=({cols='1fr 1fr',children,gap=12})=><div style={{display:'grid',gridTemplateColumns:cols,gap}}>{children}</div>;
+const Divider=({label})=><div style={{margin:'16px 0 12px',fontSize:11,fontWeight:800,color:C.TM,textTransform:'uppercase',letterSpacing:1,borderBottom:`1px solid ${C.BD}`,paddingBottom:6}}>{label}</div>;
+const stEst=q=>q===0?{t:'default',l:'Sem Estoque'}:q<25?{t:'danger',l:'Ruim (<25)'}:q<=50?{t:'warning',l:'Mínimo (≤50)'}:{t:'success',l:'Bom (>50)'};
+const ActBtns=({onEdit,onDelete})=><div style={{display:'flex',gap:4}}><Btn sm onClick={onEdit}>✎ Editar</Btn><Btn sm outline color={C.P} onClick={onDelete}>✕</Btn></div>;
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
 function Dashboard({fin,contas,estoque,vendas}){
   const saldo=fin.reduce((s,f)=>f.tipo==='entrada'?s+f.valor:s-f.valor,0);
   const aPagar=contas.filter(c=>c.status!=='pago'&&c.tipo==='pagar').reduce((s,c)=>s+c.valor,0);
-  const aReceber=contas.filter(c=>c.status!=='pago'&&c.tipo==='receber').reduce((s,c)=>s+c.valor,0);
+  const aReceber=fin.filter(f=>f.autoGerado&&f.status==='a_receber').reduce((s,f)=>s+f.valorBruto,0)+contas.filter(c=>c.status!=='pago'&&c.tipo==='receber').reduce((s,c)=>s+c.valor,0);
   const mesAtual=todayStr().slice(0,7);
   const vendasMes=vendas.filter(v=>v.data?.startsWith(mesAtual)).reduce((s,v)=>s+(v.valorTotal||0),0);
   const criticos=estoque.filter(e=>e.quantidade>0&&e.quantidade<25).length;
@@ -153,7 +160,7 @@ function Dashboard({fin,contas,estoque,vendas}){
           {ultMov.length===0?<p style={{color:'#bbb',fontSize:13,margin:0}}>Nenhuma movimentação registrada.</p>
           :ultMov.map(m=>(
             <div key={m.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'9px 0',borderBottom:`1px solid ${C.BD}`}}>
-              <div><div style={{fontSize:13,fontWeight:600}}>{m.descricao}</div><div style={{fontSize:11,color:'#bbb'}}>{m.data} · {m.categoria||'-'}</div></div>
+              <div><div style={{fontSize:13,fontWeight:600}}>{m.descricao}</div><div style={{fontSize:11,color:'#bbb'}}>{m.data} · {m.categoria||'-'}{m.taxa?` · taxa ${m.taxa}%`:''}</div></div>
               <span style={{fontWeight:800,color:m.tipo==='entrada'?'#166534':C.P}}>{m.tipo==='entrada'?'+':'-'}{fmt(m.valor)}</span>
             </div>
           ))}
@@ -175,23 +182,24 @@ function Dashboard({fin,contas,estoque,vendas}){
 function Financeiro({fin,setFin}){
   const [modal,setModal]=useState(false);
   const [editId,setEditId]=useState(null);
-  const [reciboVenda,setReciboVenda]=useState(null);
   const EF={tipo:'entrada',descricao:'',valor:'',data:todayStr(),categoria:''};
   const [f,setF]=useState(EF);
   const [filtTipo,setFiltTipo]=useState('');
   const [filtMes,setFiltMes]=useState('');
   const cats={entrada:['Venda','Transferência','Devolução','Outro'],saida:['Fornecedor','Frete','Marketing','Operacional','Impostos','Embalagem','Outro']};
   const rows=fin.filter(x=>(filtTipo?x.tipo===filtTipo:true)&&(filtMes?x.data?.startsWith(filtMes):true)).sort((a,b)=>b.data?.localeCompare(a.data));
-  const ent=rows.filter(x=>x.tipo==='entrada').reduce((s,x)=>s+x.valor,0);
+  const ent=rows.filter(x=>x.tipo==='entrada'&&x.status!=='a_receber').reduce((s,x)=>s+x.valor,0);
   const sai=rows.filter(x=>x.tipo==='saida').reduce((s,x)=>s+x.valor,0);
+  const aReceber=fin.filter(x=>x.status==='a_receber').reduce((s,x)=>s+(x.valorBruto||x.valor),0);
   const abrirNovo=()=>{setEditId(null);setF(EF);setModal(true);};
-  const abrirEdicao=r=>{setEditId(r.id);setF({tipo:r.tipo,descricao:r.descricao,valor:String(r.valor),data:r.data,categoria:r.categoria||''});setModal(true);};
+  const abrirEdicao=r=>{if(r.autoGerado)return;setEditId(r.id);setF({tipo:r.tipo,descricao:r.descricao,valor:String(r.valor),data:r.data,categoria:r.categoria||''});setModal(true);};
   const save=()=>{if(!f.descricao||!f.valor)return;const reg={...f,id:editId||uid(),valor:parseFloat(f.valor)};setFin(p=>editId?p.map(x=>x.id===editId?reg:x):[reg,...p]);setModal(false);};
   return(
     <div>
       <PH title="Financeiro" action={<Btn onClick={abrirNovo}>+ Lançamento</Btn>}/>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:16}}>
-        <SC title="Entradas" value={fmt(ent)} icon="📥" color="#166534"/>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:16}}>
+        <SC title="Entradas (recebido)" value={fmt(ent)} icon="📥" color="#166534"/>
+        <SC title="A Receber" value={fmt(aReceber)} icon="⏳" color="#0369a1"/>
         <SC title="Saídas" value={fmt(sai)} icon="📤" color={C.P}/>
         <SC title="Saldo" value={fmt(ent-sai)} icon="💰" color={(ent-sai)>=0?'#166534':C.P}/>
       </div>
@@ -200,10 +208,22 @@ function Financeiro({fin,setFin}){
         <TI label="Mês (AAAA-MM)" value={filtMes} onChange={setFiltMes} placeholder="2025-06" style={{marginBottom:0,flex:1,minWidth:160}}/>
       </Card>
       <Card><Tbl cols={[
-        {l:'Data',k:'data'},{l:'Descrição',k:'descricao'},{l:'Categoria',k:'categoria'},
+        {l:'Data',k:'data'},{l:'Descrição',k:'descricao',render:r=><div>
+          <span>{r.descricao}</span>
+          {r.autoGerado&&<Bdg type="venda"> Venda</Bdg>}
+        </div>},
+        {l:'Categoria',k:'categoria'},
         {l:'Tipo',k:'tipo',render:r=><Bdg type={r.tipo==='entrada'?'success':'danger'}>{r.tipo==='entrada'?'Entrada':'Saída'}</Bdg>},
-        {l:'Valor',k:'valor',render:r=><span style={{fontWeight:800,color:r.tipo==='entrada'?'#166534':C.P}}>{r.tipo==='entrada'?'+':'-'}{fmt(r.valor)}</span>},
-        {l:'',k:'_',render:r=><ActBtns onEdit={()=>abrirEdicao(r)} onDelete={()=>setFin(p=>p.filter(x=>x.id!==r.id))}/>},
+        {l:'V. Bruto',k:'valorBruto',render:r=>r.valorBruto?fmt(r.valorBruto):'-'},
+        {l:'Taxa',k:'taxa',render:r=>r.taxa!=null&&r.taxa>0?`${r.taxa}%`:'-'},
+        {l:'V. Líquido / Valor',k:'valor',render:r=><div>
+          <span style={{fontWeight:800,color:r.tipo==='entrada'?'#166534':C.P}}>{r.tipo==='entrada'?'+':'-'}{fmt(r.valor)}</span>
+          {r.status==='a_receber'&&<div><Bdg type="warning">A Receber</Bdg></div>}
+        </div>},
+        {l:'',k:'_',render:r=>r.autoGerado
+          ?<span style={{fontSize:11,color:'#bbb'}}>auto</span>
+          :<ActBtns onEdit={()=>abrirEdicao(r)} onDelete={()=>setFin(p=>p.filter(x=>x.id!==r.id))}/>
+        },
       ]} rows={rows}/></Card>
       {modal&&<Modal title={editId?'Editar Lançamento':'Novo Lançamento'} onClose={()=>setModal(false)}>
         <SI label="Tipo" value={f.tipo} onChange={v=>setF(p=>({...p,tipo:v,categoria:''}))} options={[{v:'entrada',l:'Entrada'},{v:'saida',l:'Saída'}]}/>
@@ -219,11 +239,8 @@ function Financeiro({fin,setFin}){
 
 // ── CONTAS ────────────────────────────────────────────────────────────────────
 function Contas({contas,setContas}){
-  const [modal,setModal]=useState(false);
-  const [editId,setEditId]=useState(null);
-  const [tab,setTab]=useState('todos');
-  const EF={tipo:'pagar',descricao:'',valor:'',vencimento:todayStr(),status:'a_vencer',categoria:''};
-  const [f,setF]=useState(EF);
+  const [modal,setModal]=useState(false);const [editId,setEditId]=useState(null);const [tab,setTab]=useState('todos');
+  const EF={tipo:'pagar',descricao:'',valor:'',vencimento:todayStr(),status:'a_vencer',categoria:''};const [f,setF]=useState(EF);
   const rows=contas.filter(c=>tab==='todos'||c.tipo===tab).sort((a,b)=>a.vencimento?.localeCompare(b.vencimento));
   const totPag=contas.filter(c=>c.tipo==='pagar'&&c.status!=='pago').reduce((s,c)=>s+c.valor,0);
   const totRec=contas.filter(c=>c.tipo==='receber'&&c.status!=='pago').reduce((s,c)=>s+c.valor,0);
@@ -264,10 +281,8 @@ function Contas({contas,setContas}){
 
 // ── COMPRAS ───────────────────────────────────────────────────────────────────
 function Compras({compras,setCompras,fornecedores}){
-  const [modal,setModal]=useState(false);
-  const [editId,setEditId]=useState(null);
-  const EF={fornecedor:'',descricao:'',valor:'',data:todayStr(),dataEntrega:'',status:'em_andamento',obs:''};
-  const [f,setF]=useState(EF);
+  const [modal,setModal]=useState(false);const [editId,setEditId]=useState(null);
+  const EF={fornecedor:'',descricao:'',valor:'',data:todayStr(),dataEntrega:'',status:'em_andamento',obs:''};const [f,setF]=useState(EF);
   const stB={em_andamento:{t:'info',l:'Em Andamento'},recebida:{t:'success',l:'Recebida'},cancelada:{t:'danger',l:'Cancelada'}};
   const abrirNovo=()=>{setEditId(null);setF(EF);setModal(true);};
   const abrirEdicao=r=>{setEditId(r.id);setF({fornecedor:r.fornecedor,descricao:r.descricao,valor:String(r.valor),data:r.data,dataEntrega:r.dataEntrega||'',status:r.status,obs:r.obs||''});setModal(true);};
@@ -281,7 +296,7 @@ function Compras({compras,setCompras,fornecedores}){
         <SC title="Total Investido" value={fmt(compras.filter(c=>c.status!=='cancelada').reduce((s,c)=>s+c.valor,0))} icon="💳" color={C.P}/>
       </div>
       <Card><Tbl cols={[
-        {l:'Data',k:'data'},{l:'Fornecedor',k:'fornecedor'},{l:'Descrição',k:'descricao'},{l:'Entrega Prevista',k:'dataEntrega'},
+        {l:'Data',k:'data'},{l:'Fornecedor',k:'fornecedor'},{l:'Descrição',k:'descricao'},{l:'Entrega',k:'dataEntrega'},
         {l:'Valor',k:'valor',render:r=>fmt(r.valor)},
         {l:'Status',k:'status',render:r=>{const s=stB[r.status]||{t:'default',l:r.status};return<Bdg type={s.t}>{s.l}</Bdg>;}},
         {l:'Ação',k:'_',render:r=><div style={{display:'flex',gap:4}}>
@@ -291,9 +306,9 @@ function Compras({compras,setCompras,fornecedores}){
       ]} rows={[...compras].sort((a,b)=>b.data?.localeCompare(a.data))}/></Card>
       {modal&&<Modal title={editId?'Editar Compra':'Nova Ordem de Compra'} onClose={()=>setModal(false)}>
         <DI label="Fornecedor *" value={f.fornecedor} onChange={v=>setF(p=>({...p,fornecedor:v}))} options={fornecedores.map(x=>x.nome)} listId="comp-forn" placeholder="Nome do fornecedor"/>
-        <TI label="Descrição dos Itens" value={f.descricao} onChange={v=>setF(p=>({...p,descricao:v}))}/>
+        <TI label="Descrição" value={f.descricao} onChange={v=>setF(p=>({...p,descricao:v}))}/>
         <TI label="Valor Total (R$) *" value={f.valor} onChange={v=>setF(p=>({...p,valor:v}))} type="number"/>
-        <Grid><TI label="Data do Pedido" value={f.data} onChange={v=>setF(p=>({...p,data:v}))} type="date"/><TI label="Entrega Prevista" value={f.dataEntrega} onChange={v=>setF(p=>({...p,dataEntrega:v}))} type="date"/></Grid>
+        <Grid><TI label="Data" value={f.data} onChange={v=>setF(p=>({...p,data:v}))} type="date"/><TI label="Entrega Prevista" value={f.dataEntrega} onChange={v=>setF(p=>({...p,dataEntrega:v}))} type="date"/></Grid>
         <SI label="Status" value={f.status} onChange={v=>setF(p=>({...p,status:v}))} options={[{v:'em_andamento',l:'Em Andamento'},{v:'recebida',l:'Recebida'},{v:'cancelada',l:'Cancelada'}]}/>
         <F label="Observações"><textarea value={f.obs} onChange={e=>setF(p=>({...p,obs:e.target.value}))} style={{...inp,height:60,resize:'vertical'}}/></F>
         <Btn onClick={save}>{editId?'Atualizar':'Salvar Compra'}</Btn>
@@ -304,10 +319,8 @@ function Compras({compras,setCompras,fornecedores}){
 
 // ── CLIENTES ──────────────────────────────────────────────────────────────────
 function Clientes({clientes,setClientes}){
-  const [modal,setModal]=useState(false);
-  const [editId,setEditId]=useState(null);
-  const EF={nome:'',email:'',telefone:''};
-  const [f,setF]=useState(EF);
+  const [modal,setModal]=useState(false);const [editId,setEditId]=useState(null);
+  const EF={nome:'',email:'',telefone:''};const [f,setF]=useState(EF);
   const abrirNovo=()=>{setEditId(null);setF(EF);setModal(true);};
   const abrirEdicao=r=>{setEditId(r.id);setF({nome:r.nome,email:r.email||'',telefone:r.telefone||''});setModal(true);};
   const save=()=>{if(!f.nome)return;const reg={...f,id:editId||uid()};setClientes(p=>editId?p.map(x=>x.id===editId?reg:x):[reg,...p]);setModal(false);};
@@ -327,62 +340,175 @@ function Clientes({clientes,setClientes}){
 
 // ── CADASTRO DE PRODUTOS ──────────────────────────────────────────────────────
 function CadastroProdutos({produtos,setProdutos,fornecedores,tamanhos,setTamanhos}){
-  const [modal,setModal]=useState(false);
-  const [editId,setEditId]=useState(null);
-  const EF={nome:'',fornecedor:'',sku:'',material:'',tamanho:''};
-  const [f,setF]=useState(EF);
+  const [modal,setModal]=useState(false);const [editId,setEditId]=useState(null);
+  const EF={nome:'',fornecedor:'',sku:'',material:'',tamanho:''};const [f,setF]=useState(EF);
   const abrirNovo=()=>{setEditId(null);setF(EF);setModal(true);};
   const abrirEdicao=r=>{setEditId(r.id);setF({nome:r.nome,fornecedor:r.fornecedor||'',sku:r.sku||'',material:r.material||'',tamanho:r.tamanho||''});setModal(true);};
   const save=()=>{
     if(!f.nome||!f.sku)return;
     if(f.tamanho&&!tamanhos.includes(f.tamanho))setTamanhos(p=>[...p,f.tamanho]);
-    const reg={...f,id:editId||uid()};
-    setProdutos(p=>editId?p.map(x=>x.id===editId?reg:x):[reg,...p]);
-    setModal(false);
+    const reg={...f,id:editId||uid()};setProdutos(p=>editId?p.map(x=>x.id===editId?reg:x):[reg,...p]);setModal(false);
   };
   return(
     <div>
-      <PH title="Cadastro de Produtos" sub="Catálogo mestre — alimenta SKU, fornecedor e material nos demais módulos" action={<Btn onClick={abrirNovo}>+ Novo Produto</Btn>}/>
-      <Card><Tbl cols={[
-        {l:'Nome',k:'nome'},{l:'SKU',k:'sku'},{l:'Fornecedor',k:'fornecedor'},{l:'Material',k:'material'},{l:'Tamanho',k:'tamanho'},
-        {l:'',k:'_',render:r=><ActBtns onEdit={()=>abrirEdicao(r)} onDelete={()=>setProdutos(p=>p.filter(x=>x.id!==r.id))}/>},
-      ]} rows={produtos} empty="Nenhum produto cadastrado ainda."/></Card>
+      <PH title="Cadastro de Produtos" sub="Catálogo mestre — alimenta SKU e dados nos demais módulos" action={<Btn onClick={abrirNovo}>+ Novo Produto</Btn>}/>
+      <Card><Tbl cols={[{l:'Nome',k:'nome'},{l:'SKU',k:'sku'},{l:'Fornecedor',k:'fornecedor'},{l:'Material',k:'material'},{l:'Tamanho',k:'tamanho'},{l:'',k:'_',render:r=><ActBtns onEdit={()=>abrirEdicao(r)} onDelete={()=>setProdutos(p=>p.filter(x=>x.id!==r.id))}/>}]} rows={produtos} empty="Nenhum produto cadastrado ainda."/></Card>
       {modal&&<Modal title={editId?'Editar Produto':'Novo Produto'} onClose={()=>setModal(false)}>
-        <TI label="Nome do Produto *" value={f.nome} onChange={v=>setF(p=>({...p,nome:v}))} placeholder="ex: Caneca Real World Club"/>
+        <TI label="Nome *" value={f.nome} onChange={v=>setF(p=>({...p,nome:v}))} placeholder="ex: Caneca Real World Club"/>
         <DI label="Fornecedor" value={f.fornecedor} onChange={v=>setF(p=>({...p,fornecedor:v}))} options={fornecedores.map(x=>x.nome)} listId="prod-forn" placeholder="Buscar fornecedor"/>
         <TI label="SKU *" value={f.sku} onChange={v=>setF(p=>({...p,sku:v}))} placeholder="EX: CAN-BRN-1"/>
-        <TI label="Material" value={f.material} onChange={v=>setF(p=>({...p,material:v}))} placeholder="ex: Cerâmica, Algodão, Inox..."/>
+        <TI label="Material" value={f.material} onChange={v=>setF(p=>({...p,material:v}))} placeholder="ex: Cerâmica, Inox..."/>
         <DI label="Tamanho" value={f.tamanho} onChange={v=>setF(p=>({...p,tamanho:v}))} options={tamanhos} listId="prod-tam" placeholder="Selecionar ou digitar novo"/>
-        <Btn onClick={save}>{editId?'Atualizar Produto':'Salvar Produto'}</Btn>
+        <Btn onClick={save}>{editId?'Atualizar':'Salvar Produto'}</Btn>
       </Modal>}
     </div>
   );
 }
 
+// ── RECIBO ────────────────────────────────────────────────────────────────────
+function ReciboModal({venda,onClose}){
+  const gerarPDF=()=>{
+    const itensHTML=(venda.itens||[]).map(i=>`<tr>
+      <td style="padding:8px 6px;border-bottom:1px solid #eee;">${i.tipoProduto||'-'}</td>
+      <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:center;">${i.sku||'-'}</td>
+      <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:center;">${i.quantidade||1}</td>
+      <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:right;">${fmt(i.valorUnitario||0)}</td>
+      <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:right;font-weight:700;">${fmt(i.subtotal||0)}</td>
+    </tr>`).join('');
+    const entregaLabel=venda.tipoEntrega==='retirada'?'Retirada na loja':`Envio — ${venda.formaEnvio==='pac'?'Correios PAC':venda.formaEnvio==='sedex'?'Correios Sedex':venda.transportadora||'Transportadora'}`;
+    const html=`<div style="font-family:Arial,sans-serif;max-width:680px;margin:0 auto;color:#1a0508;">
+      <div style="text-align:center;padding-bottom:20px;border-bottom:2px solid #700c14;margin-bottom:20px;">
+        <img src="${LOGO_URL}" style="width:150px;margin-bottom:10px;" onerror="this.style.display='none'"/>
+        <div style="font-size:13px;color:#666;line-height:2;">
+          <span>✉ ${STORE.email}</span> &nbsp;|&nbsp;
+          <span>📱 ${STORE.whatsapp}</span> &nbsp;|&nbsp;
+          <span>📷 ${STORE.instagram}</span>
+        </div>
+      </div>
+      <div style="font-size:20px;font-weight:700;color:#700c14;margin-bottom:6px;">Recibo de Venda</div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:#666;margin-bottom:18px;">
+        <span>Data: <strong>${venda.data||'-'}</strong></span>
+        <span>Nº: <strong>${(venda.id||'').slice(-6).toUpperCase()}</strong></span>
+      </div>
+      <div style="font-size:11px;font-weight:700;color:#700c14;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Cliente</div>
+      <div style="background:#faf7f0;border-radius:8px;padding:12px 16px;font-size:14px;margin-bottom:16px;">${venda.clienteNome||'Não informado'}</div>
+      <div style="font-size:11px;font-weight:700;color:#700c14;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Itens</div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr style="background:#700c14;color:#fff;">
+          <td style="padding:10px 6px;">Produto</td>
+          <td style="padding:10px 6px;text-align:center;">SKU</td>
+          <td style="padding:10px 6px;text-align:center;">Qtde</td>
+          <td style="padding:10px 6px;text-align:right;">V. Unit.</td>
+          <td style="padding:10px 6px;text-align:right;">Subtotal</td>
+        </tr></thead>
+        <tbody>${itensHTML}</tbody>
+      </table>
+      <div style="margin-top:14px;text-align:right;font-size:13px;">
+        <div style="padding:4px 0;">Subtotal: <strong>${fmt(venda.subtotal||0)}</strong></div>
+        ${n(venda.desconto)>0?`<div style="padding:4px 0;">Desconto: <strong>- ${fmt(venda.desconto)}</strong></div>`:''}
+        ${venda.tipoEntrega==='envio'&&n(venda.freteValor)>0?`<div style="padding:4px 0;">Frete: <strong>${fmt(venda.freteValor)}</strong></div>`:''}
+        <div style="font-size:20px;font-weight:800;color:#700c14;border-top:2px solid #700c14;margin-top:8px;padding-top:10px;">Total: ${fmt(venda.valorTotal||0)}</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;background:#faf7f0;border-radius:8px;padding:12px 16px;font-size:13px;margin-top:14px;">
+        <span>💳 <strong>Pagamento:</strong> ${PGTO_LABELS[venda.formaPagamento]||venda.formaPagamento||'-'}</span>
+        <span>📦 <strong>Entrega:</strong> ${entregaLabel}</span>
+      </div>
+      <div style="margin-top:28px;text-align:center;font-size:12px;color:#aaa;border-top:1px solid #eee;padding-top:14px;">
+        Obrigada pela sua compra! ✨<br/>
+        ${STORE.email} · ${STORE.whatsapp} · ${STORE.instagram}
+      </div>
+    </div>`;
+    imprimirHTML(html,'Recibo Orlaê');
+  };
+  return(
+    <Modal title="Recibo de Venda" onClose={onClose}>
+      <div style={{background:C.BG,borderRadius:12,padding:20,marginBottom:20,border:`1px solid ${C.BD}`}}>
+        <div style={{textAlign:'center',marginBottom:16,paddingBottom:16,borderBottom:`2px solid ${C.P}`}}>
+          <img src={LOGO_URL} alt="Orlaê" style={{width:110,display:'block',margin:'0 auto 8px'}}/>
+          <div style={{fontSize:12,color:'#888',lineHeight:2}}>
+            <div>✉ {STORE.email}</div>
+            <div>📱 {STORE.whatsapp} &nbsp;·&nbsp; 📷 {STORE.instagram}</div>
+          </div>
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',fontSize:12,color:'#888',marginBottom:12}}>
+          <span>Data: <strong style={{color:C.T}}>{venda.data}</strong></span>
+          <span>Nº: <strong style={{color:C.T}}>{(venda.id||'').slice(-6).toUpperCase()}</strong></span>
+        </div>
+        <div style={{fontSize:11,fontWeight:700,color:C.P,textTransform:'uppercase',letterSpacing:1,marginBottom:6}}>Cliente</div>
+        <div style={{background:'#fff',borderRadius:8,padding:'10px 14px',fontSize:14,marginBottom:14,border:`1px solid ${C.BD}`}}>{venda.clienteNome||'Não informado'}</div>
+        <div style={{fontSize:11,fontWeight:700,color:C.P,textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>Itens</div>
+        {(venda.itens||[]).map(i=>(
+          <div key={i.id} style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:`1px solid ${C.BD}`,fontSize:13}}>
+            <span>{i.quantidade}x {i.tipoProduto}{i.sku?` (${i.sku})`:''}</span>
+            <span style={{fontWeight:700}}>{fmt(i.subtotal||0)}</span>
+          </div>
+        ))}
+        <div style={{marginTop:12,textAlign:'right'}}>
+          {n(venda.desconto)>0&&<div style={{fontSize:13,color:'#888'}}>Desconto: - {fmt(venda.desconto)}</div>}
+          {venda.tipoEntrega==='envio'&&n(venda.freteValor)>0&&<div style={{fontSize:13,color:'#888'}}>Frete: {fmt(venda.freteValor)}</div>}
+          <div style={{fontSize:18,fontWeight:900,color:C.P,marginTop:6}}>Total: {fmt(venda.valorTotal||0)}</div>
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',background:'#fff',borderRadius:8,padding:'10px 14px',marginTop:12,fontSize:12,border:`1px solid ${C.BD}`}}>
+          <span>💳 {PGTO_LABELS[venda.formaPagamento]||venda.formaPagamento}</span>
+          <span>📦 {venda.tipoEntrega==='retirada'?'Retirada':venda.formaEnvio==='pac'?'Correios PAC':venda.formaEnvio==='sedex'?'Correios Sedex':venda.transportadora||'Transportadora'}</span>
+        </div>
+        <div style={{textAlign:'center',marginTop:14,fontSize:11,color:'#bbb'}}>Obrigada pela sua compra! ✨</div>
+      </div>
+      <Btn onClick={gerarPDF} style={{width:'100%',fontSize:14}}>🖨️ Imprimir / Salvar como PDF</Btn>
+    </Modal>
+  );
+}
+
 // ── VENDAS ────────────────────────────────────────────────────────────────────
-function Vendas({vendas,setVendas,clientes,estoque,setEstoque,tipos,precificacoes,produtos}){
-  const [modal,setModal]=useState(false);
-  const [editId,setEditId]=useState(null);
-  const EF={clienteNome:'',data:todayStr(),formaPagamento:'pix',tipoEntrega:'retirada',freteValor:'',formaEnvio:'pac',transportadora:'',desconto:''};
-  const [f,setF]=useState(EF);
-  const [itens,setItens]=useState([]);
-  const [itemAtual,setItemAtual]=useState({tipoProduto:'',sku:'',quantidade:'1'});
+function Vendas({vendas,setVendas,clientes,estoque,setEstoque,tipos,precificacoes,produtos,setFin}){
+  const [modal,setModal]=useState(false);const [editId,setEditId]=useState(null);const [reciboVenda,setReciboVenda]=useState(null);
+  const EF={clienteNome:'',data:todayStr(),formaPagamento:'pix',modalidadeRec:'mesmo_dia',tipoEntrega:'retirada',freteValor:'',formaEnvio:'pac',transportadora:'',desconto:''};
+  const [f,setF]=useState(EF);const [itens,setItens]=useState([]);const [itemAtual,setItemAtual]=useState({tipoProduto:'',sku:'',quantidade:'1'});
   const pgtos=[{v:'pix',l:'Pix'},{v:'debito',l:'Cartão de Débito'},{v:'credito_1x',l:'Crédito à Vista'},{v:'credito_2x',l:'Crédito 2x'},{v:'credito_3x',l:'Crédito 3x'},{v:'credito_4x',l:'Crédito 4x'},{v:'credito_5x',l:'Crédito 5x'},{v:'credito_6x',l:'Crédito 6x'}];
+  const modalidades=[{v:'mesmo_dia',l:'Mesmo Dia'},{v:'um_dia',l:'1 Dia Útil'},{v:'sem_antecipacao',l:'Sem Antecipação (30+ dias)'}];
   const skuOptions=[...new Set([...estoque.map(e=>e.sku),...produtos.map(p=>p.sku)].filter(Boolean))];
   const buscarPreco=(tp,sku)=>{let p=sku?precificacoes.find(x=>x.sku&&x.sku===sku):null;if(!p)p=precificacoes.find(x=>x.tipoProduto===tp);return p?p.precoVenda:0;};
   const addItem=()=>{if(!itemAtual.tipoProduto||!itemAtual.quantidade)return;const vu=buscarPreco(itemAtual.tipoProduto,itemAtual.sku);const qtd=parseInt(itemAtual.quantidade||1);setItens(p=>[...p,{id:uid(),tipoProduto:itemAtual.tipoProduto,sku:itemAtual.sku,quantidade:qtd,valorUnitario:vu,subtotal:vu*qtd}]);setItemAtual({tipoProduto:'',sku:'',quantidade:'1'});};
   const removeItem=id=>setItens(p=>p.filter(x=>x.id!==id));
   const subtotalGeral=itens.reduce((s,i)=>s+i.subtotal,0);
   const valorTotal=Math.max(0,subtotalGeral-n(f.desconto));
+  const taxaAtual=(f.formaPagamento==='pix')?0:(TAXAS[f.modalidadeRec]?.[f.formaPagamento]??0);
+  const valorLiq=valorTotal*(1-taxaAtual/100);
+
   const abrirNovo=()=>{setEditId(null);setF(EF);setItens([]);setItemAtual({tipoProduto:'',sku:'',quantidade:'1'});setModal(true);};
-  const abrirEdicao=r=>{setEditId(r.id);setF({clienteNome:r.clienteNome,data:r.data,formaPagamento:r.formaPagamento,tipoEntrega:r.tipoEntrega,freteValor:String(r.freteValor||''),formaEnvio:r.formaEnvio||'pac',transportadora:r.transportadora||'',desconto:String(r.desconto||'')});setItens(r.itens||[]);setModal(true);};
+  const abrirEdicao=r=>{setEditId(r.id);setF({clienteNome:r.clienteNome,data:r.data,formaPagamento:r.formaPagamento,modalidadeRec:r.modalidadeRec||'mesmo_dia',tipoEntrega:r.tipoEntrega,freteValor:String(r.freteValor||''),formaEnvio:r.formaEnvio||'pac',transportadora:r.transportadora||'',desconto:String(r.desconto||'')});setItens(r.itens||[]);setModal(true);};
+  const deleteSale=id=>{setVendas(p=>p.filter(x=>x.id!==id));setFin(p=>p.filter(x=>x.vendaId!==id));};
+
   const save=()=>{
     if(!f.clienteNome||itens.length===0)return;
-    const novaVenda={...f,id:editId||uid(),itens,subtotal:subtotalGeral,desconto:n(f.desconto),valorTotal,freteValor:n(f.freteValor)};
-    setEstoque(prev=>{let next=[...prev];if(editId){const antiga=vendas.find(v=>v.id===editId);antiga?.itens?.forEach(it=>{if(it.sku)next=next.map(e=>e.sku===it.sku?{...e,quantidade:e.quantidade+it.quantidade}:e);});}itens.forEach(it=>{if(it.sku)next=next.map(e=>e.sku===it.sku?{...e,quantidade:Math.max(0,e.quantidade-it.quantidade)}:e);});return next;});
-    setVendas(p=>editId?p.map(x=>x.id===editId?novaVenda:x):[novaVenda,...p]);
+    const novoId=editId||uid();
+    const novaVenda={...f,id:novoId,itens,subtotal:subtotalGeral,desconto:n(f.desconto),valorTotal,freteValor:n(f.freteValor)};
+
+    // Auto-register in Financeiro
+    const isAReceber=f.modalidadeRec==='sem_antecipacao'&&f.formaPagamento!=='pix'&&f.formaPagamento!=='debito';
+    const finEntry={
+      id:uid(),tipo:'entrada',
+      descricao:`Venda — ${f.clienteNome}`,
+      categoria:'Venda',data:f.data,
+      valor:valorLiq,valorBruto:valorTotal,
+      taxa:taxaAtual,modalidade:f.modalidadeRec,
+      formaPagamento:f.formaPagamento,
+      vendaId:novoId,status:isAReceber?'a_receber':'recebido',
+      autoGerado:true
+    };
+    setFin(p=>[finEntry,...p.filter(x=>x.vendaId!==editId)]);
+
+    // Estoque
+    setEstoque(prev=>{let next=[...prev];
+      if(editId){const antiga=vendas.find(v=>v.id===editId);antiga?.itens?.forEach(it=>{if(it.sku)next=next.map(e=>e.sku===it.sku?{...e,quantidade:e.quantidade+it.quantidade}:e);});}
+      itens.forEach(it=>{if(it.sku)next=next.map(e=>e.sku===it.sku?{...e,quantidade:Math.max(0,e.quantidade-it.quantidade)}:e);});
+      return next;
+    });
+    setVendas(p=>editId?p.map(x=>x.id===editId?{...novaVenda,id:editId}:x):[novaVenda,...p]);
     setModal(false);
   };
+
+  const isPix=f.formaPagamento==='pix';
   return(
     <div>
       <PH title="Vendas" action={<Btn onClick={abrirNovo}>+ Nova Venda</Btn>}/>
@@ -397,11 +523,14 @@ function Vendas({vendas,setVendas,clientes,estoque,setEstoque,tipos,precificacoe
         {l:'Pagamento',k:'formaPagamento',render:r=>PGTO_LABELS[r.formaPagamento]||r.formaPagamento},
         {l:'Desconto',k:'desconto',render:r=>r.desconto?fmt(r.desconto):'-'},
         {l:'Total',k:'valorTotal',render:r=><span style={{fontWeight:800,color:C.P}}>{fmt(r.valorTotal)}</span>},
-        {l:'',k:'_',render:r=><div style={{display:'flex',gap:4}}>
+        {l:'',k:'_',render:r=><div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
           <Btn sm onClick={()=>setReciboVenda(r)} color={C.S}>📄 Recibo</Btn>
-          <ActBtns onEdit={()=>abrirEdicao(r)} onDelete={()=>setVendas(p=>p.filter(x=>x.id!==r.id))}/>
+          <ActBtns onEdit={()=>abrirEdicao(r)} onDelete={()=>deleteSale(r.id)}/>
         </div>},
       ]} rows={[...vendas].sort((a,b)=>b.data?.localeCompare(a.data))}/></Card>
+
+      {reciboVenda&&<ReciboModal venda={reciboVenda} onClose={()=>setReciboVenda(null)}/>}
+
       {modal&&<Modal title={editId?'Editar Venda':'Nova Venda'} onClose={()=>setModal(false)} wide>
         <DI label="Cliente *" value={f.clienteNome} onChange={v=>setF(p=>({...p,clienteNome:v}))} options={clientes.map(c=>c.nome)} listId="vnd-cli" placeholder="Nome do cliente"/>
         <TI label="Data *" value={f.data} onChange={v=>setF(p=>({...p,data:v}))} type="date"/>
@@ -413,11 +542,18 @@ function Vendas({vendas,setVendas,clientes,estoque,setEstoque,tipos,precificacoe
             <TI label="Qtde" value={itemAtual.quantidade} onChange={v=>setItemAtual(p=>({...p,quantidade:v}))} type="number"/>
             <div style={{marginBottom:14,display:'flex',alignItems:'flex-end'}}><Btn sm onClick={addItem}>+ Add</Btn></div>
           </Grid>
-          {itemAtual.tipoProduto&&<div style={{fontSize:11,color:C.TM}}>💲 Preço: <strong>{fmt(buscarPreco(itemAtual.tipoProduto,itemAtual.sku))}</strong> {buscarPreco(itemAtual.tipoProduto,itemAtual.sku)===0&&'(sem precificação salva)'}</div>}
+          {itemAtual.tipoProduto&&<div style={{fontSize:11,color:C.TM}}>💲 Preço: <strong>{fmt(buscarPreco(itemAtual.tipoProduto,itemAtual.sku))}</strong></div>}
         </div>
         {itens.length>0&&<div style={{marginBottom:14}}><Tbl cols={[{l:'Produto',k:'tipoProduto'},{l:'SKU',k:'sku',render:r=>r.sku||'-'},{l:'Qtde',k:'quantidade'},{l:'V. Unit.',k:'valorUnitario',render:r=>fmt(r.valorUnitario)},{l:'Subtotal',k:'subtotal',render:r=><span style={{fontWeight:700}}>{fmt(r.subtotal)}</span>},{l:'',k:'_',render:r=><Btn sm outline color={C.P} onClick={()=>removeItem(r.id)}>✕</Btn>}]} rows={itens}/></div>}
-        <Divider label="Pagamento e Entrega"/>
+
+        <Divider label="Pagamento e Recebimento"/>
         <SI label="Forma de Pagamento" value={f.formaPagamento} onChange={v=>setF(p=>({...p,formaPagamento:v}))} options={pgtos}/>
+        {!isPix&&<SI label="Modalidade de Recebimento" value={f.modalidadeRec} onChange={v=>setF(p=>({...p,modalidadeRec:v}))} options={modalidades}/>}
+
+        {taxaAtual>0&&valorTotal>0&&<div style={{background:C.BG2,borderRadius:8,padding:'10px 14px',marginBottom:14,fontSize:13}}>
+          Taxa de {taxaAtual}% → Você recebe: <strong style={{color:C.S}}>{fmt(valorLiq)}</strong> (desconto de {fmt(valorTotal-valorLiq)})
+        </div>}
+
         <TI label="Desconto (R$)" value={f.desconto} onChange={v=>setF(p=>({...p,desconto:v}))} type="number" placeholder="0.00"/>
         <SI label="Tipo de Entrega" value={f.tipoEntrega} onChange={v=>setF(p=>({...p,tipoEntrega:v,freteValor:'',formaEnvio:'pac'}))} options={[{v:'retirada',l:'Retirada (sem custo)'},{v:'envio',l:'Envio'}]}/>
         {f.tipoEntrega==='envio'&&<>
@@ -426,8 +562,8 @@ function Vendas({vendas,setVendas,clientes,estoque,setEstoque,tipos,precificacoe
           {f.formaEnvio==='transportadora'&&<TI label="Nome da Transportadora" value={f.transportadora} onChange={v=>setF(p=>({...p,transportadora:v}))} placeholder="Nome da transportadora"/>}
         </>}
         <div style={{background:C.P,borderRadius:10,padding:16,marginTop:8}}>
-          {[['Subtotal',fmt(subtotalGeral)],['Desconto',`- ${fmt(n(f.desconto))}`],['Total da Venda',fmt(valorTotal)]].map(([l,v])=>(
-            <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',color:'#fff'}}>
+          {[['Subtotal',fmt(subtotalGeral)],['Desconto',`- ${fmt(n(f.desconto))}`],['Total da Venda',fmt(valorTotal)],['Você Recebe (líquido)',fmt(valorLiq)]].map(([l,v])=>(
+            <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',color:'#fff',borderBottom:'1px solid rgba(255,255,255,.15)'}}>
               <span style={{opacity:.8,fontSize:13}}>{l}</span><span style={{fontWeight:900,fontSize:l==='Total da Venda'?20:14}}>{v}</span>
             </div>
           ))}
@@ -440,10 +576,8 @@ function Vendas({vendas,setVendas,clientes,estoque,setEstoque,tipos,precificacoe
 
 // ── ESTOQUE ───────────────────────────────────────────────────────────────────
 function Estoque({estoque,setEstoque,tipos,produtos}){
-  const [modal,setModal]=useState(false);
-  const [editId,setEditId]=useState(null);
-  const EF={sku:'',nome:'',tipoProduto:'',cor:'',tamanho:'',quantidade:'0',custoTotal:'',frete:''};
-  const [f,setF]=useState(EF);
+  const [modal,setModal]=useState(false);const [editId,setEditId]=useState(null);
+  const EF={sku:'',nome:'',tipoProduto:'',cor:'',tamanho:'',quantidade:'0',custoTotal:'',frete:''};const [f,setF]=useState(EF);
   const custoUnit=n(f.quantidade)>0?(n(f.custoTotal)+n(f.frete))/n(f.quantidade):0;
   const onSkuChange=v=>{setF(p=>({...p,sku:v}));const prod=produtos.find(x=>x.sku===v);if(prod)setF(p=>({...p,sku:v,nome:prod.nome,tamanho:prod.tamanho||p.tamanho}));};
   const abrirNovo=()=>{setEditId(null);setF(EF);setModal(true);};
@@ -490,8 +624,7 @@ function Estoque({estoque,setEstoque,tipos,produtos}){
 
 // ── CUSTO DE PRODUTO ──────────────────────────────────────────────────────────
 function CustoProduto({custos,setCustos,fornecedores,tipos,setTipos,produtos}){
-  const [modal,setModal]=useState(false);
-  const [editId,setEditId]=useState(null);
+  const [modal,setModal]=useState(false);const [editId,setEditId]=useState(null);
   const E={tipoProduto:'',sku:'',colecao:'',fornecedor:'',custoTotal:'',frete:'',quantidade:'',cor:'',tamanho:'',tipoTecido:'',arteEstampa:'',etiqueta:'',embalagem:'',tag:'',lacre:'',cartao:'',papelEmbrulho:'',adesivo:'',caixa:'',sacola:'',outros:'',obs:''};
   const [f,setF]=useState(E);
   const custoUnit=n(f.quantidade)>0?(n(f.custoTotal)+n(f.frete))/n(f.quantidade):0;
@@ -508,7 +641,7 @@ function CustoProduto({custos,setCustos,fornecedores,tipos,setTipos,produtos}){
         {l:'Tipo',k:'tipoProduto'},{l:'SKU',k:'sku'},{l:'Coleção/Drop',k:'colecao'},{l:'Fornecedor',k:'fornecedor'},
         {l:'Custo Lote',k:'custoTotal',render:r=>fmt(r.custoTotal)},{l:'Frete',k:'frete',render:r=>fmt(r.frete)},{l:'Qtde',k:'quantidade'},
         {l:'Custo Unit.',k:'custoUnitario',render:r=><span style={{fontWeight:800,color:C.S}}>{fmt(r.custoUnitario)}</span>},
-        {l:'Total c/ Adicionais',k:'custoFinal',render:r=><span style={{fontWeight:800,color:C.P}}>{fmt(r.custoFinal)}</span>},
+        {l:'Total c/ Adic.',k:'custoFinal',render:r=><span style={{fontWeight:800,color:C.P}}>{fmt(r.custoFinal)}</span>},
         {l:'Obs',k:'obs',render:r=>r.obs?<span title={r.obs} style={{cursor:'help'}}>📝</span>:'-'},
         {l:'',k:'_',render:r=><ActBtns onEdit={()=>abrirEdicao(r)} onDelete={()=>setCustos(p=>p.filter(x=>x.id!==r.id))}/>},
       ]} rows={custos}/></Card>
@@ -536,7 +669,7 @@ function CustoProduto({custos,setCustos,fornecedores,tipos,setTipos,produtos}){
           ))}
         </div>
         <div style={{background:C.P,borderRadius:10,padding:14,margin:'16px 0',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-          <span style={{fontWeight:700,color:'rgba(255,255,255,.8)',fontSize:13}}>Custo Total (lote + frete + adicionais):</span>
+          <span style={{fontWeight:700,color:'rgba(255,255,255,.8)',fontSize:13}}>Custo Total c/ Adicionais:</span>
           <span style={{fontWeight:900,color:'#fff',fontSize:22}}>{fmt(cuTot)}</span>
         </div>
         <Divider label="Anotações em Destaque"/>
@@ -551,59 +684,61 @@ function CustoProduto({custos,setCustos,fornecedores,tipos,setTipos,produtos}){
 function Precificacao({tipos,precificacoes,setPrecificacoes,custos}){
   const PARC_OPC=[0,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,7,8,9,10];
   const EE={caixaEnvio:'',papelEmbrulho:'',sacola:'',tag:'',lacre:'',adesivo:'',estampa:'',caixa:'',outros:''};
-  const EF={tipoProduto:'',sku:'',custoProduto:'',custoFrete:'',imposto:'',impostoFrete:'',taxaPlataforma:'',taxaGateway:'',taxaParcelamento:'',custoMarketing:'',markup:'2',markupValor:'',emb:EE};
-  const [modal,setModal]=useState(false);
-  const [editId,setEditId]=useState(null);
-  const [f,setF]=useState(EF);
-  const setE=(k,v)=>setF(p=>({...p,emb:{...p.emb,[k]:v}}));
-  const custoEmb=Object.values(f.emb).reduce((s,v)=>s+n(v),0);
+  const EF={tipoProduto:'',sku:'',custoProduto:'',custoFrete:'',imposto:'',impostoFrete:'',taxaPlataforma:'',taxaGateway:'',taxaParcelamento:'',custoMarketing:'',markup:'2',markupValor:'',precoFinal:'',emb:{...EE}};
+  const [modal,setModal]=useState(false);const [editId,setEditId]=useState(null);const [f,setF]=useState({...EF});
+  const setE=(k,v)=>setF(p=>({...p,emb:{...(p.emb||EE),[k]:v}}));
+  const emb=f.emb||{...EE};
+  const custoEmb=Object.values(emb).reduce((s,v)=>s+n(v),0);
   const custoBase=n(f.custoProduto)+n(f.custoFrete)+n(f.imposto)+n(f.impostoFrete)+n(f.taxaPlataforma)+n(f.taxaGateway)+n(f.taxaParcelamento)+n(f.custoMarketing)+custoEmb;
-  const fator=n(f.markup)>0?n(f.markup):1;
+  const fator=n(f.markup)>1?n(f.markup):2;
   const markupAutoValor=custoBase*(fator-1);
   const markupFinal=f.markupValor!==''?n(f.markupValor):markupAutoValor;
-  const precoVenda=f.markupValor!==''?custoBase+markupFinal:custoBase*fator;
+  const precoCalc=f.markupValor!==''?custoBase+markupFinal:custoBase*fator;
+  // Campo precoFinal permite overrride direto do preço de venda
+  const precoVenda=f.precoFinal!==''?n(f.precoFinal):precoCalc;
   const lucroBruto=precoVenda-custoBase;
   const margem=precoVenda>0?(lucroBruto/precoVenda)*100:0;
-  const puxarCusto=tp=>{const c=custos.find(x=>x.tipoProduto===tp);if(c)setF(p=>({...p,custoProduto:c.custoUnitario.toFixed(2)}));};
-  const abrirNovo=()=>{setEditId(null);setF(EF);setModal(true);};
-  const abrirEdicao=r=>{setEditId(r.id);setF({tipoProduto:r.tipoProduto,sku:r.sku||'',custoProduto:String(r.custoProduto||''),custoFrete:String(r.custoFrete||''),imposto:String(r.imposto||''),impostoFrete:String(r.impostoFrete||''),taxaPlataforma:String(r.taxaPlataforma||''),taxaGateway:String(r.taxaGateway||''),taxaParcelamento:String(r.taxaParcelamento||''),custoMarketing:String(r.custoMarketing||''),markup:String(r.markup||'2'),markupValor:'',emb:r.emb||EE});setModal(true);};
+  const puxarCusto=tp=>{const c=(custos||[]).find(x=>x.tipoProduto===tp);if(c)setF(p=>({...p,custoProduto:String(c.custoUnitario||0)}));};
+  const abrirNovo=()=>{setEditId(null);setF({...EF,emb:{...EE}});setModal(true);};
+  const abrirEdicao=r=>{setEditId(r.id);setF({tipoProduto:r.tipoProduto||'',sku:r.sku||'',custoProduto:String(r.custoProduto||''),custoFrete:String(r.custoFrete||''),imposto:String(r.imposto||''),impostoFrete:String(r.impostoFrete||''),taxaPlataforma:String(r.taxaPlataforma||''),taxaGateway:String(r.taxaGateway||''),taxaParcelamento:String(r.taxaParcelamento||''),custoMarketing:String(r.custoMarketing||''),markup:String(r.markup||'2'),markupValor:'',precoFinal:'',emb:{...EE,...(r.emb||{})}});setModal(true);};
   const save=()=>{
     if(!f.tipoProduto)return;
-    const reg={id:editId||uid(),tipoProduto:f.tipoProduto,sku:f.sku,custoProduto:n(f.custoProduto),custoFrete:n(f.custoFrete),imposto:n(f.imposto),impostoFrete:n(f.impostoFrete),taxaPlataforma:n(f.taxaPlataforma),taxaGateway:n(f.taxaGateway),taxaParcelamento:n(f.taxaParcelamento),custoMarketing:n(f.custoMarketing),custoEmbalagem:custoEmb,emb:f.emb,markup:n(f.markup),markupValor:markupFinal,custoBase,precoVenda,lucroBruto,margem,atualizadoEm:new Date().toISOString()};
-    setPrecificacoes(p=>editId?p.map(x=>x.id===editId?reg:x):[reg,...p]);
-    setModal(false);
+    const reg={id:editId||uid(),tipoProduto:f.tipoProduto,sku:f.sku||'',custoProduto:n(f.custoProduto),custoFrete:n(f.custoFrete),imposto:n(f.imposto),impostoFrete:n(f.impostoFrete),taxaPlataforma:n(f.taxaPlataforma),taxaGateway:n(f.taxaGateway),taxaParcelamento:n(f.taxaParcelamento),custoMarketing:n(f.custoMarketing),custoEmbalagem:custoEmb,emb:{...emb},markup:n(f.markup),markupValor:markupFinal,precoVenda,lucroBruto,margem,custoBase,atualizadoEm:new Date().toISOString()};
+    setPrecificacoes(p=>editId?p.map(x=>x.id===editId?reg:x):[reg,...p]);setModal(false);
   };
+  const lista=Array.isArray(precificacoes)?precificacoes:[];
+  const tiposList=Array.isArray(tipos)?tipos:[];
   return(
     <div>
       <PH title="Precificação" sub="Calcule e salve o preço de venda — usado automaticamente no módulo Vendas" action={<Btn onClick={abrirNovo}>+ Nova Precificação</Btn>}/>
       <Card><Tbl cols={[
         {l:'Produto',k:'tipoProduto'},{l:'SKU',k:'sku',render:r=>r.sku||'-'},
-        {l:'Custo Base',k:'custoBase',render:r=>fmt(r.custoBase)},
-        {l:'Fator',k:'markup',render:r=>`×${r.markup}`},
-        {l:'Markup (R$)',k:'markupValor',render:r=>fmt(r.markupValor)},
-        {l:'Preço de Venda',k:'precoVenda',render:r=><span style={{fontWeight:900,color:C.P,fontSize:15}}>{fmt(r.precoVenda)}</span>},
-        {l:'Margem',k:'margem',render:r=>`${r.margem.toFixed(1)}%`},
+        {l:'Custo Base',k:'custoBase',render:r=>fmt(r.custoBase||0)},
+        {l:'Fator ×',k:'markup',render:r=>`×${r.markup||2}`},
+        {l:'Markup (R$)',k:'markupValor',render:r=>fmt(r.markupValor||0)},
+        {l:'Preço de Venda',k:'precoVenda',render:r=><span style={{fontWeight:900,color:C.P,fontSize:15}}>{fmt(r.precoVenda||0)}</span>},
+        {l:'Margem',k:'margem',render:r=>`${(r.margem||0).toFixed(1)}%`},
         {l:'Ações',k:'_',render:r=><ActBtns onEdit={()=>abrirEdicao(r)} onDelete={()=>setPrecificacoes(p=>p.filter(x=>x.id!==r.id))}/>},
-      ]} rows={precificacoes} empty="Nenhuma precificação salva ainda."/></Card>
+      ]} rows={lista} empty="Nenhuma precificação salva ainda."/></Card>
       {modal&&<Modal title={editId?'Editar Precificação':'Nova Precificação'} onClose={()=>setModal(false)} wide>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
           <div>
             <Card style={{marginBottom:12}}>
               <Divider label="Produto"/>
-              <DI label="Tipo de Produto *" value={f.tipoProduto} onChange={v=>{setF(p=>({...p,tipoProduto:v}));puxarCusto(v);}} options={tipos} listId="pr-tipo" placeholder="Selecionar ou digitar"/>
-              <TI label="SKU (opcional)" value={f.sku} onChange={v=>setF(p=>({...p,sku:v}))} placeholder="Vincula ao estoque"/>
-              <TI label="Custo do Produto (R$)" value={f.custoProduto} onChange={v=>setF(p=>({...p,custoProduto:v}))} type="number" placeholder="0.00"/>
-              <div style={{fontSize:11,color:'#aaa',marginTop:-8}}>💡 Preenchido automaticamente pela ficha de Custo de Produto, se existir.</div>
+              <DI label="Tipo de Produto *" value={f.tipoProduto||''} onChange={v=>{setF(p=>({...p,tipoProduto:v}));puxarCusto(v);}} options={tiposList} listId="pr-tipo" placeholder="Selecionar ou digitar"/>
+              <TI label="SKU (opcional)" value={f.sku||''} onChange={v=>setF(p=>({...p,sku:v}))} placeholder="Vincula ao estoque"/>
+              <TI label="Custo do Produto (R$)" value={f.custoProduto||''} onChange={v=>setF(p=>({...p,custoProduto:v}))} type="number" placeholder="0.00"/>
+              <div style={{fontSize:11,color:'#aaa',marginTop:-8}}>💡 Preenchido automaticamente pela ficha de Custo, se existir.</div>
             </Card>
             <Card style={{marginBottom:12}}>
               <Divider label="Logística"/>
-              <TI label="Custo de Frete (R$)" value={f.custoFrete} onChange={v=>setF(p=>({...p,custoFrete:v}))} type="number" placeholder="0.00"/>
-              <TI label="Imposto sobre Frete (R$)" value={f.impostoFrete} onChange={v=>setF(p=>({...p,impostoFrete:v}))} type="number" placeholder="0.00"/>
+              <TI label="Custo de Frete (R$)" value={f.custoFrete||''} onChange={v=>setF(p=>({...p,custoFrete:v}))} type="number" placeholder="0.00"/>
+              <TI label="Imposto sobre Frete (R$)" value={f.impostoFrete||''} onChange={v=>setF(p=>({...p,impostoFrete:v}))} type="number" placeholder="0.00"/>
             </Card>
             <Card>
               <Divider label="Custos Adicionais"/>
               {[['caixaEnvio','Caixa de Envio'],['papelEmbrulho','Papel de Embrulho'],['sacola','Sacola'],['tag','Tag'],['lacre','Lacre'],['adesivo','Adesivo'],['estampa','Estampa'],['caixa','Caixa'],['outros','Outros']].map(([k,l])=>(
-                <TI key={k} label={`${l} (R$)`} value={f.emb[k]??''} onChange={v=>setE(k,v)} type="number" placeholder="0.00"/>
+                <TI key={k} label={`${l} (R$)`} value={emb[k]||''} onChange={v=>setE(k,v)} type="number" placeholder="0.00"/>
               ))}
               <div style={{background:C.BG2,borderRadius:8,padding:'10px 14px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                 <span style={{fontWeight:700,fontSize:13}}>Total Custos Adicionais:</span>
@@ -614,23 +749,26 @@ function Precificacao({tipos,precificacoes,setPrecificacoes,custos}){
           <div>
             <Card style={{marginBottom:12}}>
               <Divider label="Taxas e Impostos"/>
-              <TI label="Imposto do Produto (R$)" value={f.imposto} onChange={v=>setF(p=>({...p,imposto:v}))} type="number" placeholder="0.00"/>
-              <TI label="Taxa de Plataforma (R$)" value={f.taxaPlataforma} onChange={v=>setF(p=>({...p,taxaPlataforma:v}))} type="number" placeholder="0.00"/>
-              <TI label="Taxa de Gateway (R$)" value={f.taxaGateway} onChange={v=>setF(p=>({...p,taxaGateway:v}))} type="number" placeholder="0.00"/>
+              <TI label="Imposto do Produto (R$)" value={f.imposto||''} onChange={v=>setF(p=>({...p,imposto:v}))} type="number" placeholder="0.00"/>
+              <TI label="Taxa de Plataforma (R$)" value={f.taxaPlataforma||''} onChange={v=>setF(p=>({...p,taxaPlataforma:v}))} type="number" placeholder="0.00"/>
+              <TI label="Taxa de Gateway (R$)" value={f.taxaGateway||''} onChange={v=>setF(p=>({...p,taxaGateway:v}))} type="number" placeholder="0.00"/>
               <F label="Taxa de Parcelamento (%)">
-                <input value={f.taxaParcelamento??''} onChange={e=>setF(p=>({...p,taxaParcelamento:e.target.value}))} type="number" step="0.1" list="pr-parc" style={inp} placeholder="0.00"/>
+                <input value={f.taxaParcelamento||''} onChange={e=>setF(p=>({...p,taxaParcelamento:e.target.value}))} type="number" step="0.1" list="pr-parc" style={inp} placeholder="0.00"/>
                 <datalist id="pr-parc">{PARC_OPC.map(t=><option key={t} value={t}/>)}</datalist>
               </F>
-              <TI label="Custo de Marketing (R$)" value={f.custoMarketing} onChange={v=>setF(p=>({...p,custoMarketing:v}))} type="number" placeholder="0.00"/>
+              <TI label="Custo de Marketing (R$)" value={f.custoMarketing||''} onChange={v=>setF(p=>({...p,custoMarketing:v}))} type="number" placeholder="0.00"/>
             </Card>
             <Card style={{marginBottom:12}}>
-              <Divider label="Markup"/>
-              <TI label="Fator de multiplicação (ex: 2 = dobro do custo)" value={f.markup} onChange={v=>setF(p=>({...p,markup:v,markupValor:''}))} type="number" placeholder="ex: 2"/>
+              <Divider label="Markup e Preço Final"/>
+              <TI label="Fator de multiplicação (ex: 2 = dobro)" value={f.markup||'2'} onChange={v=>setF(p=>({...p,markup:v,markupValor:'',precoFinal:''}))} type="number" placeholder="2"/>
               <div style={{background:C.BG2,borderRadius:8,padding:'8px 12px',marginBottom:12,fontSize:12,color:C.TM}}>
-                Preço automático: {fmt(custoBase)} × {fator} = <strong>{fmt(custoBase*fator)}</strong>
+                Automático: {fmt(custoBase)} × {fator} = <strong>{fmt(precoCalc)}</strong>
               </div>
-              <TI label="Valor do Markup em R$ (editável)" value={f.markupValor!==''?f.markupValor:markupAutoValor.toFixed(2)} onChange={v=>setF(p=>({...p,markupValor:v}))} type="number" placeholder="0.00"/>
-              <div style={{fontSize:11,color:'#aaa'}}>💡 Edite este campo para ajustar o preço final manualmente.</div>
+              <TI label="Valor do Markup (R$) — ajuste fino" value={f.markupValor!==''?f.markupValor:markupAutoValor.toFixed(2)} onChange={v=>setF(p=>({...p,markupValor:v,precoFinal:''}))} type="number" placeholder="0.00"/>
+              <div style={{marginTop:8,padding:'10px 0',borderTop:`1px solid ${C.BD}`}}>
+                <TI label="💰 Preço Final Desejado (R$) — sobrescreve tudo" value={f.precoFinal!==''?f.precoFinal:precoCalc.toFixed(2)} onChange={v=>setF(p=>({...p,precoFinal:v}))} type="number" placeholder="Defina o preço final" style={{marginBottom:4}}/>
+                <div style={{fontSize:11,color:'#aaa'}}>Edite este campo para definir o preço de venda diretamente, independente do markup.</div>
+              </div>
             </Card>
             <div style={{background:C.P,borderRadius:12,padding:20,color:'#fff',marginBottom:14}}>
               <div style={{fontWeight:800,fontSize:11,opacity:.6,textTransform:'uppercase',letterSpacing:1.5,marginBottom:12}}>Resultado</div>
@@ -649,127 +787,7 @@ function Precificacao({tipos,precificacoes,setPrecificacoes,custos}){
   );
 }
 
-// ── RECIBO ────────────────────────────────────────────────────────────────────
-function ReciboModal({venda, onClose}){
-  const gerarPDF = () => {
-    const itensHTML = (venda.itens||[]).map(i=>`
-      <tr>
-        <td style="padding:8px 6px;border-bottom:1px solid #eee;">${i.tipoProduto||'-'}</td>
-        <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:center;">${i.sku||'-'}</td>
-        <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:center;">${i.quantidade||1}</td>
-        <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:right;">${fmt(i.valorUnitario||0)}</td>
-        <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:right;font-weight:700;">${fmt(i.subtotal||0)}</td>
-      </tr>`).join('');
-    const pgtoLabel={pix:'Pix',debito:'Cartão de Débito',credito_1x:'Crédito à Vista',credito_2x:'Crédito 2x',credito_3x:'Crédito 3x',credito_4x:'Crédito 4x',credito_5x:'Crédito 5x',credito_6x:'Crédito 6x'};
-    const entregaLabel = venda.tipoEntrega==='retirada'?'Retirada na loja':`Envio — ${venda.formaEnvio==='pac'?'Correios PAC':venda.formaEnvio==='sedex'?'Correios Sedex':venda.transportadora||'Transportadora'}`;
-    const w = window.open('','_blank','width=800,height=900');
-    w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Recibo Orlaê</title>
-    <style>
-      *{margin:0;padding:0;box-sizing:border-box;}
-      body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#1a0508;padding:40px;max-width:700px;margin:0 auto;}
-      .header{text-align:center;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid #700c14;}
-      .logo{width:180px;margin-bottom:10px;}
-      .store-info{font-size:13px;color:#555;line-height:1.8;}
-      .store-info span{display:block;}
-      .title{font-size:20px;font-weight:700;color:#700c14;margin:20px 0 6px;}
-      .meta{display:flex;justify-content:space-between;font-size:13px;color:#666;margin-bottom:20px;}
-      .section-label{font-size:11px;font-weight:700;color:#700c14;text-transform:uppercase;letter-spacing:1px;margin:18px 0 8px;}
-      .client-box{background:#faf7f0;border-radius:8px;padding:12px 16px;font-size:14px;margin-bottom:16px;}
-      table{width:100%;border-collapse:collapse;font-size:13px;}
-      thead tr{background:#700c14;color:#fff;}
-      thead td{padding:10px 6px;font-weight:600;}
-      .totals{margin-top:16px;text-align:right;}
-      .totals .row{display:flex;justify-content:flex-end;gap:40px;padding:5px 0;font-size:14px;}
-      .totals .row.total{font-size:18px;font-weight:800;color:#700c14;border-top:2px solid #700c14;margin-top:8px;padding-top:10px;}
-      .payment-box{background:#faf7f0;border-radius:8px;padding:12px 16px;font-size:13px;margin-top:16px;display:flex;justify-content:space-between;}
-      .footer{margin-top:36px;text-align:center;font-size:12px;color:#999;border-top:1px solid #eee;padding-top:16px;}
-      @media print{body{padding:20px;}@page{margin:15mm;}}
-    </style></head><body>
-    <div class="header">
-      <img src="${LOGO_URL}" class="logo" onerror="this.style.display='none'"/>
-      <div class="store-info">
-        <span>✉ useorlae@gmail.com</span>
-        <span>📱 (21) 99015-4918</span>
-        <span>📷 @useorlae</span>
-      </div>
-    </div>
-    <div class="title">Recibo de Venda</div>
-    <div class="meta">
-      <span>Data: <strong>${venda.data||'-'}</strong></span>
-      <span>Nº: <strong>${(venda.id||'').slice(-6).toUpperCase()}</strong></span>
-    </div>
-    <div class="section-label">Cliente</div>
-    <div class="client-box">${venda.clienteNome||'Não informado'}</div>
-    <div class="section-label">Itens</div>
-    <table>
-      <thead><tr>
-        <td>Produto</td><td style="text-align:center;">SKU</td>
-        <td style="text-align:center;">Qtde</td>
-        <td style="text-align:right;">V. Unit.</td>
-        <td style="text-align:right;">Subtotal</td>
-      </tr></thead>
-      <tbody>${itensHTML}</tbody>
-    </table>
-    <div class="totals">
-      <div class="row"><span>Subtotal</span><span>${fmt(venda.subtotal||0)}</span></div>
-      ${n(venda.desconto)>0?`<div class="row"><span>Desconto</span><span>- ${fmt(venda.desconto)}</span></div>`:''}
-      ${venda.tipoEntrega==='envio'&&n(venda.freteValor)>0?`<div class="row"><span>Frete</span><span>${fmt(venda.freteValor)}</span></div>`:''}
-      <div class="row total"><span>Total</span><span>${fmt(venda.valorTotal||0)}</span></div>
-    </div>
-    <div class="payment-box">
-      <span>💳 <strong>Pagamento:</strong> ${pgtoLabel[venda.formaPagamento]||venda.formaPagamento||'-'}</span>
-      <span>📦 <strong>Entrega:</strong> ${entregaLabel}</span>
-    </div>
-    <div class="footer">
-      Obrigada pela sua compra! ✨<br/>
-      Orlaê — useorlae@gmail.com · (21) 99015-4918 · @useorlae
-    </div>
-    <script>window.onload=()=>{window.print();}<\/script>
-    </body></html>`);
-    w.document.close();
-  };
-
-  const pgtoLabel={pix:'Pix',debito:'Cartão de Débito',credito_1x:'Crédito à Vista',credito_2x:'Crédito 2x',credito_3x:'Crédito 3x',credito_4x:'Crédito 4x',credito_5x:'Crédito 5x',credito_6x:'Crédito 6x'};
-  return(
-    <Modal title="Recibo de Venda" onClose={onClose}>
-      {/* Prévia */}
-      <div style={{background:C.BG,borderRadius:12,padding:20,marginBottom:20,border:`1px solid ${C.BD}`}}>
-        <div style={{textAlign:'center',marginBottom:16,paddingBottom:16,borderBottom:`2px solid ${C.P}`}}>
-          <img src={LOGO_URL} alt="Orlaê" style={{width:120,display:'block',margin:'0 auto 8px'}}/>
-          <div style={{fontSize:12,color:'#888',lineHeight:1.9}}>
-            <div>✉ useorlae@gmail.com</div>
-            <div>📱 (21) 99015-4918</div>
-            <div>📷 @useorlae</div>
-          </div>
-        </div>
-        <div style={{display:'flex',justifyContent:'space-between',fontSize:12,color:'#888',marginBottom:12}}>
-          <span>Data: <strong style={{color:C.T}}>{venda.data}</strong></span>
-          <span>Nº: <strong style={{color:C.T}}>{(venda.id||'').slice(-6).toUpperCase()}</strong></span>
-        </div>
-        <div style={{fontSize:11,fontWeight:700,color:C.P,textTransform:'uppercase',letterSpacing:1,marginBottom:6}}>Cliente</div>
-        <div style={{background:'#fff',borderRadius:8,padding:'10px 14px',fontSize:14,marginBottom:14,border:`1px solid ${C.BD}`}}>{venda.clienteNome||'Não informado'}</div>
-        <div style={{fontSize:11,fontWeight:700,color:C.P,textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>Itens</div>
-        {(venda.itens||[]).map(i=>(
-          <div key={i.id} style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:`1px solid ${C.BD}`,fontSize:13}}>
-            <span>{i.quantidade}x {i.tipoProduto} {i.sku?`(${i.sku})`:''}</span>
-            <span style={{fontWeight:700}}>{fmt(i.subtotal||0)}</span>
-          </div>
-        ))}
-        <div style={{marginTop:12,textAlign:'right'}}>
-          {n(venda.desconto)>0&&<div style={{fontSize:13,color:'#888'}}>Desconto: - {fmt(venda.desconto)}</div>}
-          {venda.tipoEntrega==='envio'&&n(venda.freteValor)>0&&<div style={{fontSize:13,color:'#888'}}>Frete: {fmt(venda.freteValor)}</div>}
-          <div style={{fontSize:18,fontWeight:900,color:C.P,marginTop:6}}>Total: {fmt(venda.valorTotal||0)}</div>
-        </div>
-        <div style={{display:'flex',justifyContent:'space-between',background:'#fff',borderRadius:8,padding:'10px 14px',marginTop:12,fontSize:12,border:`1px solid ${C.BD}`}}>
-          <span>💳 {pgtoLabel[venda.formaPagamento]||venda.formaPagamento}</span>
-          <span>📦 {venda.tipoEntrega==='retirada'?'Retirada':venda.formaEnvio==='pac'?'Correios PAC':venda.formaEnvio==='sedex'?'Correios Sedex':venda.transportadora||'Transportadora'}</span>
-        </div>
-        <div style={{textAlign:'center',marginTop:16,fontSize:12,color:'#bbb'}}>Obrigada pela sua compra! ✨</div>
-      </div>
-      <Btn onClick={gerarPDF} style={{width:'100%'}}>⬇ Exportar PDF</Btn>
-    </Modal>
-  );
-}
+// ── ANTECIPAÇÃO ───────────────────────────────────────────────────────────────
 function Antecipacao(){
   const [f,setF]=useState({modalidade:'mesmo_dia',pagamento:'pix',valor:''});
   const pgtosPorMod={mesmo_dia:[{v:'pix',l:'Pix'},{v:'debito',l:'Cartão de Débito'},{v:'credito_1x',l:'Crédito à Vista'},{v:'credito_2x',l:'Crédito 2x'},{v:'credito_3x',l:'Crédito 3x'},{v:'credito_4x',l:'Crédito 4x'},{v:'credito_5x',l:'Crédito 5x'},{v:'credito_6x',l:'Crédito 6x'}],um_dia:[{v:'pix',l:'Pix'},{v:'debito',l:'Cartão de Débito'},{v:'credito_1x',l:'Crédito à Vista'},{v:'credito_2x',l:'Crédito 2x'},{v:'credito_3x',l:'Crédito 3x'},{v:'credito_4x',l:'Crédito 4x'},{v:'credito_5x',l:'Crédito 5x'},{v:'credito_6x',l:'Crédito 6x'}],sem_antecipacao:[{v:'credito_1x',l:'Crédito à Vista'},{v:'credito_2x',l:'Crédito 2x'},{v:'credito_3x',l:'Crédito 3x'},{v:'credito_4x',l:'Crédito 4x'},{v:'credito_5x',l:'Crédito 5x'},{v:'credito_6x',l:'Crédito 6x'}]};
@@ -810,10 +828,8 @@ function Antecipacao(){
 
 // ── FORNECEDORES ──────────────────────────────────────────────────────────────
 function Fornecedores({fornecedores,setFornecedores}){
-  const [modal,setModal]=useState(false);
-  const [editId,setEditId]=useState(null);
-  const E={nome:'',cnpj:'',email:'',telefone:'',endereco:'',site:''};
-  const [f,setF]=useState(E);
+  const [modal,setModal]=useState(false);const [editId,setEditId]=useState(null);
+  const E={nome:'',cnpj:'',email:'',telefone:'',endereco:'',site:''};const [f,setF]=useState(E);
   const abrirNovo=()=>{setEditId(null);setF(E);setModal(true);};
   const abrirEdicao=r=>{setEditId(r.id);setF({nome:r.nome,cnpj:r.cnpj||'',email:r.email||'',telefone:r.telefone||'',endereco:r.endereco||'',site:r.site||''});setModal(true);};
   const save=()=>{if(!f.nome)return;const reg={...f,id:editId||uid()};setFornecedores(p=>editId?p.map(x=>x.id===editId?reg:x):[reg,...p]);setModal(false);};
@@ -855,17 +871,13 @@ function Fornecedores({fornecedores,setFornecedores}){
 
 // ── MATÉRIA-PRIMA ─────────────────────────────────────────────────────────────
 function Materiais({materiais,setMateriais,fornecedores,tipos,setTipos}){
-  const [modal,setModal]=useState(false);
-  const [editId,setEditId]=useState(null);
-  const E={tipoProduto:'',fornecedor:'',quantidade:'',custoUnitario:'',frete:'',data:todayStr(),obs:''};
-  const [f,setF]=useState(E);
+  const [modal,setModal]=useState(false);const [editId,setEditId]=useState(null);
+  const E={tipoProduto:'',fornecedor:'',quantidade:'',custoUnitario:'',frete:'',data:todayStr(),obs:''};const [f,setF]=useState(E);
   const custoLote=n(f.custoUnitario)*n(f.quantidade);
   const abrirNovo=()=>{setEditId(null);setF(E);setModal(true);};
   const abrirEdicao=r=>{setEditId(r.id);setF({tipoProduto:r.tipoProduto,fornecedor:r.fornecedor||'',quantidade:String(r.quantidade||''),custoUnitario:String(r.custoUnitario||''),frete:String(r.frete||''),data:r.data,obs:r.obs||''});setModal(true);};
   const save=()=>{if(!f.tipoProduto||!f.quantidade)return;if(!tipos.includes(f.tipoProduto))setTipos(p=>[...p,f.tipoProduto]);const reg={...f,id:editId||uid(),custoTotal:custoLote,quantidade:parseInt(f.quantidade),custoUnitario:n(f.custoUnitario),frete:n(f.frete)};setMateriais(p=>editId?p.map(x=>x.id===editId?reg:x):[reg,...p]);setModal(false);};
-  const totFrete=materiais.reduce((s,m)=>s+n(m.frete),0);
-  const totCusto=materiais.reduce((s,m)=>s+n(m.custoTotal),0);
-  const totEst=materiais.reduce((s,m)=>s+parseInt(m.quantidade||0),0);
+  const totFrete=materiais.reduce((s,m)=>s+n(m.frete),0);const totCusto=materiais.reduce((s,m)=>s+n(m.custoTotal),0);const totEst=materiais.reduce((s,m)=>s+parseInt(m.quantidade||0),0);
   return(
     <div>
       <PH title="Matéria-Prima" sub="Insumos comprados para produção" action={<Btn onClick={abrirNovo}>+ Novo Material</Btn>}/>
@@ -907,13 +919,36 @@ function Relatorios({vendas,fin,contas,estoque}){
   const filtra=arr=>arr.filter(x=>x.data>=ini&&x.data<=fim);
   const vF=filtra(vendas);const finF=filtra(fin);
   const totV=vF.reduce((s,v)=>s+(v.valorTotal||0),0);
-  const ent=finF.filter(x=>x.tipo==='entrada').reduce((s,x)=>s+x.valor,0);
+  const ent=finF.filter(x=>x.tipo==='entrada'&&x.status!=='a_receber').reduce((s,x)=>s+x.valor,0);
   const sai=finF.filter(x=>x.tipo==='saida').reduce((s,x)=>s+x.valor,0);
   const byPgto=vF.reduce((a,v)=>{a[v.formaPagamento]=(a[v.formaPagamento]||0)+(v.valorTotal||0);return a;},{});
   const byDia=vF.reduce((a,v)=>{a[v.data]=(a[v.data]||0)+(v.valorTotal||0);return a;},{});
   const byCliente=vF.reduce((a,v)=>{a[v.clienteNome]=(a[v.clienteNome]||0)+(v.valorTotal||0);return a;},{});
   const tipos=[{v:'completo',l:'Relatório Completo'},{v:'vendas',l:'Vendas por Período'},{v:'vendas_diario',l:'Vendas Diárias'},{v:'fluxo',l:'Fluxo de Caixa'},{v:'contas_pagar',l:'Contas a Pagar'},{v:'contas_receber',l:'Contas a Receber'},{v:'estoque',l:'Estoque Completo'}];
   const show=k=>tipo==='completo'||tipo===k;
+
+  const BtnExp=({onClick})=><Btn sm outline color={C.S} onClick={onClick}>⬇ CSV</Btn>;
+  const BtnPrint=({html,titulo})=><Btn sm outline color={C.P} onClick={()=>imprimirHTML(html,titulo)}>🖨️ Imprimir</Btn>;
+
+  const tabelaHTML=(headers,rows)=>`<table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:12px;">
+    <thead><tr style="background:#700c14;color:#fff;">${headers.map(h=>`<td style="padding:8px;">${h}</td>`).join('')}</tr></thead>
+    <tbody>${rows.map((r,i)=>`<tr style="background:${i%2===1?'#faf7f0':'#fff'}">${r.map(c=>`<td style="padding:8px;border-bottom:1px solid #eee;">${c}</td>`).join('')}</tr>`).join('')}</tbody>
+  </table>`;
+
+  const htmlVendas=`<h2 style="color:#700c14;">Relatório de Vendas — ${ini} a ${fim}</h2>
+    <p>Total vendido: <strong>${fmt(totV)}</strong> | ${vF.length} vendas | Ticket médio: <strong>${fmt(vF.length?totV/vF.length:0)}</strong></p>
+    <h4 style="color:#92263f;margin-top:16px;">Por Forma de Pagamento</h4>
+    ${tabelaHTML(['Pagamento','Total','%'],Object.entries(byPgto).map(([p,t])=>[PGTO_LABELS[p]||p,fmt(t),`${totV>0?((t/totV)*100).toFixed(1):0}%`]))}
+    <h4 style="color:#92263f;margin-top:16px;">Por Cliente</h4>
+    ${tabelaHTML(['Cliente','Total'],Object.entries(byCliente).sort((a,b)=>b[1]-a[1]).map(([c,t])=>[c,fmt(t)]))}`;
+
+  const htmlFluxo=`<h2 style="color:#700c14;">Fluxo de Caixa — ${ini} a ${fim}</h2>
+    <p>Entradas: <strong>${fmt(ent)}</strong> | Saídas: <strong>${fmt(sai)}</strong> | Saldo: <strong>${fmt(ent-sai)}</strong></p>
+    ${tabelaHTML(['Data','Descrição','Categoria','Tipo','Valor'],finF.sort((a,b)=>b.data?.localeCompare(a.data)).map(r=>[r.data,r.descricao,r.categoria||'-',r.tipo==='entrada'?'Entrada':'Saída',`${r.tipo==='entrada'?'+':'-'}${fmt(r.valor)}`]))}`;
+
+  const htmlEstoque=`<h2 style="color:#700c14;">Estoque Completo</h2>
+    ${tabelaHTML(['SKU','Nome','Tipo','Cor','Tam.','Qtde','Custo Unit.','Status'],estoque.map(r=>[r.sku,r.nome,r.tipoProduto||'-',r.cor||'-',r.tamanho||'-',r.quantidade,r.custoUnitario?fmt(r.custoUnitario):'-',r.quantidade===0?'Sem Estoque':r.quantidade<25?'Ruim':r.quantidade<=50?'Mínimo':'Bom']))}`;
+
   return(
     <div>
       <PH title="Relatórios"/>
@@ -921,9 +956,18 @@ function Relatorios({vendas,fin,contas,estoque}){
         <SI label="Tipo de Relatório" value={tipo} onChange={setTipo} options={tipos} style={{marginBottom:0,flex:'0 0 220px'}}/>
         <TI label="Data Inicial" value={ini} onChange={setIni} type="date" style={{marginBottom:0,flex:1}}/>
         <TI label="Data Final" value={fim} onChange={setFim} type="date" style={{marginBottom:0,flex:1}}/>
+        <div style={{marginBottom:0}}>
+          <Btn onClick={()=>imprimirHTML(htmlVendas+htmlFluxo+htmlEstoque,'Relatório Completo Orlaê')} color={C.P}>🖨️ Imprimir Completo</Btn>
+        </div>
       </Card>
+
       {(show('vendas')||show('vendas_diario'))&&<Card style={{marginBottom:12}}>
-        <Divider label="Resumo de Vendas"/>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+          <Divider label="Resumo de Vendas"/><div style={{display:'flex',gap:6}}>
+            <BtnExp onClick={()=>exportCSV(vF,[{k:'data',l:'Data'},{k:'clienteNome',l:'Cliente'},{k:'formaPagamento',l:'Pagamento'},{k:'valorTotal',l:'Total'}],'vendas')}/>
+            <BtnPrint html={htmlVendas} titulo="Relatório de Vendas"/>
+          </div>
+        </div>
         <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:16}}>
           <SC title="Total Vendido" value={fmt(totV)} icon="💰" color={C.P}/>
           <SC title="Nº de Vendas" value={vF.length} icon="🛍️" color={C.S}/>
@@ -936,8 +980,14 @@ function Relatorios({vendas,fin,contas,estoque}){
         {show('vendas_diario')&&<><h5 style={{color:C.S,margin:'16px 0 8px',fontWeight:700}}>Por Dia</h5>
         <Tbl cols={[{l:'Data',k:'d'},{l:'Total',k:'t',render:r=>fmt(r.t)},{l:'Nº Vendas',k:'q'}]} rows={Object.entries(byDia).sort((a,b)=>b[0].localeCompare(a[0])).map(([d,t])=>({d,t,q:vF.filter(v=>v.data===d).length}))}/></>}
       </Card>}
+
       {show('fluxo')&&<Card style={{marginBottom:12}}>
-        <Divider label="Fluxo de Caixa"/>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+          <Divider label="Fluxo de Caixa"/><div style={{display:'flex',gap:6}}>
+            <BtnExp onClick={()=>exportCSV(finF,[{k:'data',l:'Data'},{k:'descricao',l:'Descrição'},{k:'categoria',l:'Categoria'},{k:'tipo',l:'Tipo'},{k:'valor',l:'Valor'}],'fluxo')}/>
+            <BtnPrint html={htmlFluxo} titulo="Fluxo de Caixa"/>
+          </div>
+        </div>
         <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:16}}>
           <SC title="Entradas" value={fmt(ent)} icon="📥" color="#166534"/>
           <SC title="Saídas" value={fmt(sai)} icon="📤" color={C.P}/>
@@ -945,16 +995,28 @@ function Relatorios({vendas,fin,contas,estoque}){
         </div>
         <Tbl cols={[{l:'Data',k:'data'},{l:'Descrição',k:'descricao'},{l:'Categoria',k:'categoria'},{l:'Tipo',k:'tipo',render:r=><Bdg type={r.tipo==='entrada'?'success':'danger'}>{r.tipo==='entrada'?'Entrada':'Saída'}</Bdg>},{l:'Valor',k:'valor',render:r=><span style={{fontWeight:700,color:r.tipo==='entrada'?'#166534':C.P}}>{r.tipo==='entrada'?'+':'-'}{fmt(r.valor)}</span>}]} rows={[...finF].sort((a,b)=>b.data?.localeCompare(a.data))}/>
       </Card>}
+
       {show('contas_pagar')&&<Card style={{marginBottom:12}}>
-        <Divider label="Contas a Pagar"/>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+          <Divider label="Contas a Pagar"/><BtnExp onClick={()=>exportCSV(contas.filter(c=>c.tipo==='pagar'),[{k:'descricao',l:'Descrição'},{k:'vencimento',l:'Vencimento'},{k:'valor',l:'Valor'},{k:'status',l:'Status'}],'contas-pagar')}/>
+        </div>
         <Tbl cols={[{l:'Descrição',k:'descricao'},{l:'Vencimento',k:'vencimento'},{l:'Valor',k:'valor',render:r=>fmt(r.valor)},{l:'Status',k:'status',render:r=><Bdg type={r.status==='pago'?'success':r.status==='vencida'?'danger':'warning'}>{r.status==='pago'?'Pago':r.status==='vencida'?'Vencida':'A Vencer'}</Bdg>}]} rows={contas.filter(c=>c.tipo==='pagar')}/>
       </Card>}
+
       {show('contas_receber')&&<Card style={{marginBottom:12}}>
-        <Divider label="Contas a Receber"/>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+          <Divider label="Contas a Receber"/><BtnExp onClick={()=>exportCSV(contas.filter(c=>c.tipo==='receber'),[{k:'descricao',l:'Descrição'},{k:'vencimento',l:'Vencimento'},{k:'valor',l:'Valor'},{k:'status',l:'Status'}],'contas-receber')}/>
+        </div>
         <Tbl cols={[{l:'Descrição',k:'descricao'},{l:'Vencimento',k:'vencimento'},{l:'Valor',k:'valor',render:r=>fmt(r.valor)},{l:'Status',k:'status',render:r=><Bdg type={r.status==='pago'?'success':r.status==='vencida'?'danger':'warning'}>{r.status==='pago'?'Pago':r.status==='vencida'?'Vencida':'A Vencer'}</Bdg>}]} rows={contas.filter(c=>c.tipo==='receber')}/>
       </Card>}
+
       {show('estoque')&&<Card>
-        <Divider label="Estoque Completo"/>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+          <Divider label="Estoque Completo"/><div style={{display:'flex',gap:6}}>
+            <BtnExp onClick={()=>exportCSV(estoque,[{k:'sku',l:'SKU'},{k:'nome',l:'Nome'},{k:'tipoProduto',l:'Tipo'},{k:'quantidade',l:'Qtde'},{k:'custoUnitario',l:'Custo Unit.'}],'estoque')}/>
+            <BtnPrint html={htmlEstoque} titulo="Estoque Completo"/>
+          </div>
+        </div>
         <Tbl cols={[{l:'SKU',k:'sku'},{l:'Nome',k:'nome'},{l:'Tipo',k:'tipoProduto'},{l:'Cor',k:'cor'},{l:'Tamanho',k:'tamanho'},{l:'Custo Unit.',k:'custoUnitario',render:r=>r.custoUnitario?fmt(r.custoUnitario):'-'},{l:'Qtde',k:'quantidade',render:r=><span style={{fontWeight:800}}>{r.quantidade}</span>},{l:'Status',k:'_',render:r=>{const s=stEst(r.quantidade);return<Bdg type={s.t}>{s.l}</Bdg>;}}]} rows={estoque}/>
       </Card>}
     </div>
@@ -967,10 +1029,10 @@ function ExportModal({onClose,fin,contas,compras,vendas,clientes,estoque,custos,
   const download=(content,filename,type='text/plain')=>{const blob=new Blob(['\ufeff'+content],{type});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();};
   const exportJSON=()=>{download(JSON.stringify({fin,contas,compras,vendas,clientes,estoque,custos,fornecedores,materiais,precificacoes,produtos,exportadoEm:new Date().toISOString()},null,2),`orlae-backup-${todayStr()}.json`,'application/json');};
   const sheets=[
-    {l:'Financeiro',fn:`orlae-financeiro-${todayStr()}.csv`,rows:fin,cols:['data','tipo','categoria','descricao','valor']},
+    {l:'Financeiro',fn:`orlae-financeiro-${todayStr()}.csv`,rows:fin,cols:['data','tipo','categoria','descricao','valorBruto','taxa','valor','status']},
     {l:'Contas',fn:`orlae-contas-${todayStr()}.csv`,rows:contas,cols:['tipo','descricao','categoria','vencimento','valor','status']},
     {l:'Compras',fn:`orlae-compras-${todayStr()}.csv`,rows:compras,cols:['data','fornecedor','descricao','valor','dataEntrega','status']},
-    {l:'Vendas',fn:`orlae-vendas-${todayStr()}.csv`,rows:vendas,cols:['data','clienteNome','formaPagamento','desconto','valorTotal']},
+    {l:'Vendas',fn:`orlae-vendas-${todayStr()}.csv`,rows:vendas,cols:['data','clienteNome','formaPagamento','modalidadeRec','desconto','valorTotal']},
     {l:'Clientes',fn:`orlae-clientes-${todayStr()}.csv`,rows:clientes,cols:['nome','email','telefone']},
     {l:'Cadastro de Produtos',fn:`orlae-produtos-${todayStr()}.csv`,rows:produtos,cols:['nome','sku','fornecedor','material','tamanho']},
     {l:'Estoque',fn:`orlae-estoque-${todayStr()}.csv`,rows:estoque,cols:['sku','nome','tipoProduto','cor','tamanho','quantidade','custoUnitario']},
@@ -983,8 +1045,8 @@ function ExportModal({onClose,fin,contas,compras,vendas,clientes,estoque,custos,
     <Modal title="Exportar Dados" onClose={onClose}>
       <div style={{background:C.BG2,borderRadius:10,padding:14,marginBottom:20}}>
         <div style={{fontWeight:700,color:C.P,fontSize:13,marginBottom:4}}>📦 Backup Completo (JSON)</div>
-        <p style={{margin:'0 0 10px',fontSize:12,color:C.TM}}>Exporta todos os módulos em um único arquivo.</p>
-        <Btn onClick={exportJSON}>⬇ Baixar Backup Completo (.json)</Btn>
+        <p style={{margin:'0 0 10px',fontSize:12,color:C.TM}}>Exporta todos os módulos em um único arquivo. Ideal para backup e restauração.</p>
+        <Btn onClick={exportJSON}>⬇ Baixar Backup (.json)</Btn>
       </div>
       <Divider label="Exportar por módulo (CSV)"/>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
@@ -1000,48 +1062,38 @@ function ExportModal({onClose,fin,contas,compras,vendas,clientes,estoque,custos,
 }
 
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
-export default function App() {
-  const [active, setActive] = useState('dashboard');
-  const [open, setOpen] = useState(true);
-  const [exportOpen, setExportOpen] = useState(false);
-  const [fin, setFin] = useStore('fin', []);
-  const [contas, setContas] = useStore('contas', []);
-  const [compras, setCompras] = useStore('compras', []);
-  const [vendas, setVendas] = useStore('vendas', []);
-  const [clientes, setClientes] = useStore('clientes', []);
-  const [estoque, setEstoque] = useStore('estoque', []);
-  const [custos, setCustos] = useStore('custos', []);
-  const [fornecedores, setFornecedores] = useStore('fornecedores', []);
-  const [materiais, setMateriais] = useStore('materiais', []);
-  const [precificacoes, setPrecificacoes] = useStore('precificacoes', []);
-  const [produtos, setProdutos] = useStore('produtos', []);
-  const [tipos, setTipos] = useStore('tipos', TIPOS_BASE);
-  const [tamanhos, setTamanhos] = useStore('tamanhos', TAMANHOS_BASE);
+export default function App(){
+  const [active,setActive]=useState('dashboard');const [open,setOpen]=useState(true);const [exportOpen,setExportOpen]=useState(false);
+  const [fin,setFin]=useStore('fin',[]);const [contas,setContas]=useStore('contas',[]);const [compras,setCompras]=useStore('compras',[]);
+  const [vendas,setVendas]=useStore('vendas',[]);const [clientes,setClientes]=useStore('clientes',[]);const [estoque,setEstoque]=useStore('estoque',[]);
+  const [custos,setCustos]=useStore('custos',[]);const [fornecedores,setFornecedores]=useStore('fornecedores',[]);const [materiais,setMateriais]=useStore('materiais',[]);
+  const [precificacoes,setPrecificacoes]=useStore('precificacoes',[]);const [produtos,setProdutos]=useStore('produtos',[]);
+  const [tipos,setTipos]=useStore('tipos',TIPOS_BASE);const [tamanhos,setTamanhos]=useStore('tamanhos',TAMANHOS_BASE);
 
-  useEffect(() => {
-    const s = document.createElement('style');
-    s.textContent = `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap');*{font-family:'DM Sans',system-ui,sans-serif;box-sizing:border-box;}body{margin:0;background:${C.BG};}::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:${C.BD};border-radius:4px}input,select,textarea{font-family:inherit!important;}`;
+  useEffect(()=>{
+    const s=document.createElement('style');
+    s.textContent=`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap');*{font-family:'DM Sans',system-ui,sans-serif;box-sizing:border-box;}body{margin:0;background:${C.BG};}::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:${C.BD};border-radius:4px}input,select,textarea{font-family:inherit!important;}`;
     document.head.appendChild(s);
-  }, []);
+  },[]);
 
-  const pages = {
-    dashboard: <Dashboard fin={fin} contas={contas} estoque={estoque} vendas={vendas}/>,
-    financeiro: <Financeiro fin={fin} setFin={setFin}/>,
-    contas: <Contas contas={contas} setContas={setContas}/>,
-    compras: <Compras compras={compras} setCompras={setCompras} fornecedores={fornecedores}/>,
-    vendas: <Vendas vendas={vendas} setVendas={setVendas} clientes={clientes} estoque={estoque} setEstoque={setEstoque} tipos={tipos} precificacoes={precificacoes} produtos={produtos}/>,
-    clientes: <Clientes clientes={clientes} setClientes={setClientes}/>,
-    produtos: <CadastroProdutos produtos={produtos} setProdutos={setProdutos} fornecedores={fornecedores} tamanhos={tamanhos} setTamanhos={setTamanhos}/>,
-    estoque: <Estoque estoque={estoque} setEstoque={setEstoque} tipos={tipos} produtos={produtos}/>,
-    custo: <CustoProduto custos={custos} setCustos={setCustos} fornecedores={fornecedores} tipos={tipos} setTipos={setTipos} produtos={produtos}/>,
-    precificacao: <Precificacao tipos={tipos} precificacoes={precificacoes} setPrecificacoes={setPrecificacoes} custos={custos}/>,
-    antecipacao: <Antecipacao/>,
-    fornecedores: <Fornecedores fornecedores={fornecedores} setFornecedores={setFornecedores}/>,
-    materiais: <Materiais materiais={materiais} setMateriais={setMateriais} fornecedores={fornecedores} tipos={tipos} setTipos={setTipos}/>,
-    relatorios: <Relatorios vendas={vendas} fin={fin} contas={contas} estoque={estoque}/>,
+  const pages={
+    dashboard:<Dashboard fin={fin} contas={contas} estoque={estoque} vendas={vendas}/>,
+    financeiro:<Financeiro fin={fin} setFin={setFin}/>,
+    contas:<Contas contas={contas} setContas={setContas}/>,
+    compras:<Compras compras={compras} setCompras={setCompras} fornecedores={fornecedores}/>,
+    vendas:<Vendas vendas={vendas} setVendas={setVendas} clientes={clientes} estoque={estoque} setEstoque={setEstoque} tipos={tipos} precificacoes={precificacoes} produtos={produtos} setFin={setFin}/>,
+    clientes:<Clientes clientes={clientes} setClientes={setClientes}/>,
+    produtos:<CadastroProdutos produtos={produtos} setProdutos={setProdutos} fornecedores={fornecedores} tamanhos={tamanhos} setTamanhos={setTamanhos}/>,
+    estoque:<Estoque estoque={estoque} setEstoque={setEstoque} tipos={tipos} produtos={produtos}/>,
+    custo:<CustoProduto custos={custos} setCustos={setCustos} fornecedores={fornecedores} tipos={tipos} setTipos={setTipos} produtos={produtos}/>,
+    precificacao:<Precificacao tipos={tipos} precificacoes={precificacoes} setPrecificacoes={setPrecificacoes} custos={custos}/>,
+    antecipacao:<Antecipacao/>,
+    fornecedores:<Fornecedores fornecedores={fornecedores} setFornecedores={setFornecedores}/>,
+    materiais:<Materiais materiais={materiais} setMateriais={setMateriais} fornecedores={fornecedores} tipos={tipos} setTipos={setTipos}/>,
+    relatorios:<Relatorios vendas={vendas} fin={fin} contas={contas} estoque={estoque}/>,
   };
 
-  return (
+  return(
     <div style={{display:'flex',height:'100vh',background:C.BG,overflow:'hidden'}}>
       <div style={{width:open?238:60,background:C.P,flexShrink:0,display:'flex',flexDirection:'column',transition:'width .25s',overflow:'hidden'}}>
         <div style={{padding:open?'18px 18px 14px':'16px 11px',borderBottom:'1px solid rgba(255,255,255,.12)',flexShrink:0,minHeight:72,display:'flex',alignItems:'center'}}>
@@ -1064,9 +1116,7 @@ export default function App() {
           </button>
         </div>
       </div>
-      <div style={{flex:1,overflowY:'auto',overflowX:'hidden',padding:28}}>
-        {pages[active]}
-      </div>
+      <div style={{flex:1,overflowY:'auto',overflowX:'hidden',padding:28}}>{pages[active]}</div>
       {exportOpen&&<ExportModal onClose={()=>setExportOpen(false)} fin={fin} contas={contas} compras={compras} vendas={vendas} clientes={clientes} estoque={estoque} custos={custos} fornecedores={fornecedores} materiais={materiais} precificacoes={precificacoes} produtos={produtos}/>}
     </div>
   );
