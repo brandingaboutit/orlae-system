@@ -15,7 +15,8 @@ const TAXAS = {
 const PGTO_LABELS={pix:'Pix',debito:'Débito',credito_1x:'Crédito à Vista',credito_2x:'Crédito 2x',credito_3x:'Crédito 3x',credito_4x:'Crédito 4x',credito_5x:'Crédito 5x',credito_6x:'Crédito 6x'};
 const TIPOS_BASE=['Botton','Copo Americano','Caneca','Garrafa Térmica','Copo Térmico','Copo de Vidro'];
 const TAMANHOS_BASE=['Único','P','M','G','GG'];
-const LOGO_URL="https://res.cloudinary.com/djnerbs5w/image/upload/f_auto,q_auto/F2EBD9_qgv2cw";
+const LOGO_URL="https://res.cloudinary.com/djnerbs5w/image/upload/f_auto,q_auto/F2EBD9_qgv2cw"; // sidebar (creme)
+const LOGO_RECIBO_URL="https://res.cloudinary.com/djnerbs5w/image/upload/v1783287929/92263F_cuqczh.png";
 const STORE={email:'useorlae@gmail.com',whatsapp:'(21) 99015-4918',instagram:'@useorlae'};
 
 const NAV=[
