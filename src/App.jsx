@@ -379,7 +379,7 @@ function ReciboModal({venda,onClose}){
     const entregaLabel=venda.tipoEntrega==='retirada'?'Retirada na loja':`Envio — ${venda.formaEnvio==='pac'?'Correios PAC':venda.formaEnvio==='sedex'?'Correios Sedex':venda.transportadora||'Transportadora'}`;
     const html=`<div style="font-family:Arial,sans-serif;max-width:680px;margin:0 auto;color:#1a0508;">
       <div style="text-align:center;padding-bottom:20px;border-bottom:2px solid #700c14;margin-bottom:20px;">
-        <img src="${LOGO_URL}" style="width:150px;margin-bottom:10px;" onerror="this.style.display='none'"/>
+        <img src="${LOGO_RECIBO_URL}" style="width:150px;margin-bottom:10px;" onerror="this.style.display='none'"/>
         <div style="font-size:13px;color:#666;line-height:2;">
           <span>✉ ${STORE.email}</span> &nbsp;|&nbsp;
           <span>📱 ${STORE.whatsapp}</span> &nbsp;|&nbsp;
@@ -414,9 +414,8 @@ function ReciboModal({venda,onClose}){
         <span>💳 <strong>Pagamento:</strong> ${PGTO_LABELS[venda.formaPagamento]||venda.formaPagamento||'-'}</span>
         <span>📦 <strong>Entrega:</strong> ${entregaLabel}</span>
       </div>
-      <div style="margin-top:28px;text-align:center;font-size:12px;color:#aaa;border-top:1px solid #eee;padding-top:14px;">
-        Obrigada pela sua compra! ✨<br/>
-        ${STORE.email} · ${STORE.whatsapp} · ${STORE.instagram}
+      <div style="margin-top:28px;text-align:center;font-size:13px;color:#aaa;border-top:1px solid #eee;padding-top:14px;">
+        Obrigada pela sua compra! ✨
       </div>
     </div>`;
     imprimirHTML(html,'Recibo Orlaê');
@@ -425,7 +424,7 @@ function ReciboModal({venda,onClose}){
     <Modal title="Recibo de Venda" onClose={onClose}>
       <div style={{background:C.BG,borderRadius:12,padding:20,marginBottom:20,border:`1px solid ${C.BD}`}}>
         <div style={{textAlign:'center',marginBottom:16,paddingBottom:16,borderBottom:`2px solid ${C.P}`}}>
-          <img src={LOGO_URL} alt="Orlaê" style={{width:110,display:'block',margin:'0 auto 8px'}}/>
+          <img src={LOGO_RECIBO_URL} alt="Orlaê" style={{width:110,display:'block',margin:'0 auto 8px'}}/>
           <div style={{fontSize:12,color:'#888',lineHeight:2}}>
             <div>✉ {STORE.email}</div>
             <div>📱 {STORE.whatsapp} &nbsp;·&nbsp; 📷 {STORE.instagram}</div>
